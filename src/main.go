@@ -1,9 +1,22 @@
-// You can edit this code!
-// Click here and start typing.
 package main
 
-import "fmt"
+import (
+	"fmt"
 
+	"./myfunctions"
+)
+
+var appIniStr = "app init"
+
+func init() {
+	fmt.Printf(appIniStr + "\n")
+}
 func main() {
-  fmt.Println("Hello, 世界")
+
+	variable := myfunctions.SayHello()
+	fmt.Println(variable)
+
+	myfunctions.TestSwitch()
+	myfunctions.Testarray()
+
 }
