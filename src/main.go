@@ -13,10 +13,6 @@ func init() {
 }
 func main() {
 
-	variable := myfunctions.SayHello()
-	fmt.Println(variable)
-
-	myfunctions.TestSwitch()
-	myfunctions.Testarray()
+	myfunctions.RunTest()
 
 }
