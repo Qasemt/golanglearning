@@ -1,10 +1,13 @@
 package myfunctions
 
 import (
+	"bufio"
 	"encoding/csv"
 	"fmt"
 	"io"
+	"net"
 	"os"
+	"strings"
 	"time"
 )
 
@@ -117,12 +120,66 @@ func testCSV() bool {
 	}
 
 	csvExport(f, "d:/result1.csv")
-	fmt.Printf("csv export success \n")
+
 	return true
 }
 
+func testTcpServer() {
+	fmt.Println("Launching server...")
+
+	// listen on all interfaces
+	ln, _ := net.Listen("tcp", ":4444")
+
+	// accept connection on port
+	conn, _ := ln.Accept()
+
+	// run loop forever (or until ctrl-c)
+	for {
+		// will listen for message to process ending in newline (\n)
+		message, _ := bufio.NewReader(conn).ReadString('\n')
+		// output message received
+		fmt.Print("Message Received:", string(message))
+		// sample process for string received
+		newmessage := strings.ToUpper(message)
+		// send new string back to client
+		conn.Write([]byte("\n rec from server : " + newmessage + "\n"))
+	}
+}
+func say(s string) {
+	for i := 0; i < 1000; i++ {
+		time.Sleep(100 * time.Millisecond)
+		fmt.Println(s)
+	}
+}
+func sum(s []int, c chan int) {
+	sum := 0
+	for _, v := range s {
+		sum += v
+	}
+	c <- sum // send sum to c
+}
+func testThread() {
+	go say("world")
+	say("hello")
+}
+
+func testThreadChannal() {
+	s := []int{7, 2, 8, -9, 4, 0}
+
+	c := make(chan int)
+	go sum(s[:len(s)/2], c)
+	go sum(s[len(s)/2:], c)
+	x, y := <-c, <-c // receive from c
+
+	fmt.Println(x, y, x+y)
+}
 func RunTest() {
 
-	testCSV()
-	fmt.Printf("fff")
+	// if testCSV() {
+	// 	fmt.Printf("csv export success \n")
+	// }
+	//testTcpServer()
+	//:::::::::::::::::::::::::: THREAD
+	//testThread()
+	testThreadChannal()
 }
