@@ -158,6 +158,15 @@ func sum(s []int, c chan int) {
 	}
 	c <- sum // send sum to c
 }
+
+func squares(c chan int) {
+
+	for i := 0; i <= 3; i++ {
+		n := <-c
+		fmt.Println(n * n)
+	}
+
+}
 func testThread() {
 	go say("world")
 	say("hello")
@@ -173,6 +182,15 @@ func testThreadChannal() {
 
 	fmt.Println(x, y, x+y)
 }
+func testChannalBuffer() {
+
+	c := make(chan int, 3)
+	go squares(c)
+	c <- 1
+	c <- 2
+	c <- 3
+
+}
 func RunTest() {
 
 	// if testCSV() {
@@ -182,4 +200,5 @@ func RunTest() {
 	//:::::::::::::::::::::::::: THREAD
 	//testThread()
 	testThreadChannal()
+	//	testChannalBuffer()
 }
