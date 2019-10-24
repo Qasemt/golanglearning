@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 
-	"./myfunctions"
+	"./testFunctions"
 )
 
 var appIniStr = "app init"
@@ -13,6 +13,8 @@ func init() {
 }
 func main() {
 
-	myfunctions.RunTest()
-
+	//testFunctions.RunTest()
+	//testFunctions.RunTestInterface()
+	//	testFunctions.RunTestGoRoot()
+	testFunctions.RunTestMutex()
 }

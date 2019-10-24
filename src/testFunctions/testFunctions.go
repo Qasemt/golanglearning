@@ -1,4 +1,4 @@
-package myfunctions
+package testFunctions
 
 import (
 	"bufio"
