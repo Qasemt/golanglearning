@@ -2,11 +2,8 @@ package testFunctions
 
 import (
 	"bufio"
-	"encoding/csv"
 	"fmt"
-	"io"
 	"net"
-	"os"
 	"strings"
 	"time"
 )
@@ -54,74 +51,6 @@ func testtime() {
 
 	epoch := time.Now().Unix()
 	fmt.Println(epoch)
-}
-
-// Changed to csvExport, as it doesn't make much sense to export things from
-// package main
-func csvExport(data [][]string, out string) error {
-	file, err := os.Create(out)
-	if err != nil {
-		return err
-	}
-	defer file.Close()
-
-	writer := csv.NewWriter(file)
-	defer writer.Flush()
-
-	for _, value := range data {
-		if err := writer.Write(value); err != nil {
-			return err // let's return errors if necessary, rather than having a one-size-fits-all error handler
-		}
-	}
-	return nil
-}
-
-func readCsvFile(filePath string) ([][]string, error) {
-	// Load a csv file.
-	f, _ := os.Open(filePath)
-	var s [][]string
-	// Create a new reader.
-	r := csv.NewReader(f)
-
-	for {
-
-		record, err := r.Read()
-		// Stop at EOF.
-		if err == io.EOF {
-			break
-		}
-
-		if err != nil {
-			return nil, err
-			//panic(err)
-		}
-
-		s = append(s, record)
-		//fmt.Println(record)
-		//fmt.Println(len(record))
-		// for value := range record {
-		// 	fmt.Printf("  %v\n", record[value])
-	}
-
-	return s, nil
-}
-
-func testCSV() bool {
-
-	var f, e = readCsvFile("D:/workspace/stock/data/crypto/Bitcoin.csv")
-
-	if e != nil {
-
-		if os.IsNotExist(e) {
-			fmt.Print("File Does Not Exist: ")
-			return false
-		}
-
-	}
-
-	csvExport(f, "d:/result1.csv")
-
-	return true
 }
 
 func testTcpServer() {

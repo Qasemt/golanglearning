@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 
-	"./testFunctions"
+	"./modules/stockwork"
 )
 
 var appIniStr = "app init"
@@ -16,5 +16,7 @@ func main() {
 	//testFunctions.RunTest()
 	//testFunctions.RunTestInterface()
 	//	testFunctions.RunTestGoRoot()
-	testFunctions.RunTestMutex()
+	//testFunctions.RunTestMutex()
+	//	testFunctions.RunTestCSV()
+	stockwork.RUNStock()
 }
