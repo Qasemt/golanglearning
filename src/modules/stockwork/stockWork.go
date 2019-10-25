@@ -17,12 +17,10 @@ import (
 )
 
 //::::::::::::::::::::::::::::::::::::::::::::::::::::::: DEFINE
-var path_list string = "D:/workspace/stock/stock_data_cleaner/tehran_watch_list.json"
-var path_src_dir string = "D:/workspace/stock/tseclient/normal/"
+var path_watch_list string = "./tehran_watch_list.json"
+var path_src_dir string = ""
+var path_dst_dir string = ""
 var log = logrus.New()
-
-//var path_dst_dir string = "D:/workspace/stock/tseclient/tmp/"
-var path_dst_dir string = "D:/out/"
 
 func CastInt(s string) string {
 
@@ -79,7 +77,7 @@ func (c stockRecord) toString(is_cast bool) []string {
 }
 
 func readJsonWatchList(wlist *watchListItems) bool {
-	jsonFile, err := os.Open(path_list)
+	jsonFile, err := os.Open(path_watch_list)
 	if err != nil {
 		fmt.Println(err)
 		return false
@@ -184,26 +182,50 @@ func logInit() {
 	}).Info("Application Initializing")
 }
 
-func RUNStock() {
-	//:::::::::::::::::::::::::::: Setup  LOGGER ::::::::::::::::::::::
+func RUNStock(src_dir string, dst_dir string, is_adj bool) {
+
+	path_src_dir = src_dir
+	path_dst_dir = dst_dir
+	//:::::::::::::::::::::::::::: Setup  LOGGER ::::::::::::::::::::::::::::
 	logInit()
-	//:::::::::::::::::::
-	var wlist watchListItems
+	if is_adj {
+		log.Infof("->>>------ ADJUST---> ")
+	}
+	//::::::::::::::::::::::::::::  requirement ::::::::::::::::::::::::::::
+	if _, err := os.Stat(path_watch_list); os.IsNotExist(err) {
 
-	readJsonWatchList(&wlist)
+		log.Errorf("file not exist :[ %v ]\n", path_watch_list)
+		return
+	}
 
-	var is_adj bool
+	if _, err := os.Stat(path_src_dir); os.IsNotExist(err) {
+
+		log.Errorf("dir not exist :[ %v ]\n", path_src_dir)
+		return
+	}
+
+	var stockList watchListItems
+
+	readJsonWatchList(&stockList)
+
 	var f_dst string
-
-	for _, g := range wlist.Qlist {
+	var f_src string
+	for _, g := range stockList.Qlist {
 
 		f_dst = ""
-		var f_src = path.Join(path_src_dir, g.Id+".csv")
+		f_src = ""
 
-		if is_adj {
+		if is_adj && strings.HasPrefix(g.Id, "IRX") {
+			f_src = path.Join(path_src_dir, g.Id+".csv")
 			f_dst = path.Join(path_dst_dir, g.Name+"_adj"+".csv")
 		} else {
-			f_dst = path.Join(path_dst_dir, g.Name+".csv")
+			if is_adj {
+				f_src = path.Join(path_src_dir, g.Id+"-i.csv")
+				f_dst = path.Join(path_dst_dir, g.Name+"_adj"+".csv")
+			} else {
+				f_src = path.Join(path_src_dir, g.Id+".csv")
+				f_dst = path.Join(path_dst_dir, g.Name+".csv")
+			}
 		}
 
 		var _, list, e = readCsvFile(f_src)
@@ -212,7 +234,7 @@ func RUNStock() {
 			if os.IsNotExist(e) {
 				log.Printf("File Does Not Exist:[%v]\n", f_src)
 			} else {
-				log.Printf("failed :[%v]\n", f_src)
+				log.Errorf("failed %v:[%v]\n", g.Name, f_src)
 			}
 		}
 
@@ -233,11 +255,13 @@ func RUNStock() {
 		if err != nil {
 			log.Printf("export failed [%v]\n", f_dst)
 		} else {
-			log.Printf("success >>> %v", f_dst)
-		}
-	}
 
-	//println(list)
+			log.WithFields(logrus.Fields{
+				"adj": is_adj,
+			}).Info("success >>> " + f_dst)
+		}
+
+	}
 	log.Info("finished >>>")
 
 }
