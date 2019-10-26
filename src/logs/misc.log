@@ -184,3 +184,8 @@ time="2019-10-25 17:32:50" level=info msg="success >>> D:/out/idx_anboh_sazi.csv
 time="2019-10-25 17:32:50" level=info msg="success >>> D:/out/idx_bank_ha.csv"
 time="2019-10-25 17:32:50" level=info msg="success >>> D:/out/idx_ham_vaz.csv"
 time="2019-10-25 17:32:50" level=info msg="finished >>>"
+time="2019-10-26 17:02:47" level=info msg="Application Initializing" Arch=amd64 Number of CPUs=4 Runtime Version=go1.13.1
+time="2019-10-26 17:02:47" level=error msg="dir not exist :[ D:/workspace/stock/tseclient/normal/ ]\n"
+time="2019-10-26 17:02:47" level=info msg="Application Initializing" Arch=amd64 Number of CPUs=4 Runtime Version=go1.13.1
+time="2019-10-26 17:02:47" level=info msg="->>>------ ADJUST---> "
+time="2019-10-26 17:02:47" level=error msg="dir not exist :[ D:/workspace/stock/tseclient/Adjusted/ ]\n"
