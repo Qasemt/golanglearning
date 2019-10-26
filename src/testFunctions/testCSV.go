@@ -11,9 +11,6 @@ var path_list string = "D:/workspace/stock/stock_data_cleaner/tehran_watch_list.
 var path_src_dir string = "D:/workspace/stock/tseclient/normal/"
 var path_dst_dir string = "D:/workspace/stock/tseclient/tmp/"
 
-//::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-// Changed to csvExport, as it doesn't make much sense to export things from
-// package main
 func csvExport(data [][]string, out string) error {
 	file, err := os.Create(out)
 	if err != nil {
