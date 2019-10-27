@@ -12,3 +12,4 @@
 *.out
 src/logs/misc.log
 
+/src/logs
