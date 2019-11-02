@@ -7,6 +7,7 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
+	"net/url"
 	"os"
 	"path"
 	"path/filepath"
@@ -52,6 +53,26 @@ func CastFloat(f string) string {
 		//res = fmt.Sprintf("%0.0000f", s)
 		res = strconv.FormatFloat(s, 'f', 4, 64)
 
+	}
+	return res
+}
+func toFloat(f string) float64 {
+	var res float64
+
+	f = strings.Replace(f, " ", "", -1)
+	res, err := strconv.ParseFloat(f, 64)
+	if err != nil {
+		res = 0
+	}
+	return res
+}
+func toINT64(v string) int64 {
+	var res int64
+
+	v = strings.Replace(v, " ", "", -1)
+	res, err := strconv.ParseInt(v, 10, 64)
+	if err != nil {
+		res = 0
 	}
 	return res
 }
@@ -405,19 +426,16 @@ func ConvertStoockTODT7(src_file_csv string, dst_file_csv string) {
 }
 
 type StockItem struct {
-	O  float64
-	H  float64
-	L  float64
-	C  float64
-	V  float64
-	T  string
-	D  string
+	D string
+	T string
+
+	O float64
+	H float64
+	L float64
+	C float64
+	V float64
+
 	BV float64
-}
-type ResultDataStock struct {
-	Success bool        `json:"success"`
-	Message string      `json:"message"`
-	Result  []StockItem `json:"result"`
 }
 
 func outToCSVFile(items []StockItem, dst_file_csv string) bool {
@@ -485,9 +503,19 @@ func outToCSVFile(items []StockItem, dst_file_csv string) bool {
 
 }
 
-func getJson(url string, target_object_json interface{}) error {
-	var myClient = &http.Client{Timeout: 15 * time.Second}
-	r, err := myClient.Get(url)
+func getJson(url_path string, target_object_json interface{}) error {
+
+	fmt.Println(url_path)
+	fixedURL, err := url.Parse("http://103.21.150.184:3128")
+	if err != nil {
+		fmt.Println("Malformed URL: ", err.Error())
+		return err
+	}
+
+	transport := &http.Transport{Proxy: http.ProxyURL(fixedURL)}
+
+	var myClient = &http.Client{Timeout: 15 * time.Second, Transport: transport}
+	r, err := myClient.Get(url_path)
 	if err != nil {
 		return err
 	}
@@ -500,17 +528,75 @@ func getJson(url string, target_object_json interface{}) error {
 	}
 
 	json.Unmarshal(body, &target_object_json)
-
+	//fmt.Printf("body len : %v\n %v\n", len(body), string(body))
 	return err
 	//return json.NewDecoder(r.Body).Decode(target)
 }
+func unixMilli(t time.Time) int64 {
+	return t.Round(time.Millisecond).UnixNano() / (int64(time.Millisecond) / int64(time.Nanosecond))
+}
 
-//{"success":true,"message":"","result":[{"O":10549.85999999,"H":10735.67000000,"L":10527.97588008,"C":10665.00000000,"V":49.14918427,"T":"2019-09-03T13:00:00","BV":522653.57417097},{"O":10665.00000000,"H":10752.20000000,"L":10572.17977203,"C":10618.99616958,"V":31.88953528,"T":"2019-09-03T14:00:00","BV":340198.37486701},
+type StockItemBinance struct {
+	// Open_time          int64  `json:"0"`
+	// O                  string `json:"1"`
+	// H                  string `json:"2"`
+	// L                  string `json:"3"`
+	// C                  string `json:"4"`
+	// V                  string `json:"5"`
+	// Close_time         int64  `json:"6"`
+	// Quote_asset_volume string `json:"7"`
+	// Number_of_trades   int64  `json:"8"`
+	// Rev1               string `json:"9"`
+	// Rev2               string `json:"10"`
+	// Rev3               string `json:"11"`
+
+	Open_time          int64
+	O                  string
+	H                  string
+	L                  string
+	C                  string
+	V                  string
+	Close_time         int64
+	Quote_asset_volume string
+	Number_of_trades   int64
+	Rev1               string
+	Rev2               string
+	Rev3               string
+}
+type ResultBinanceStock struct {
+	Result []StockItemBinance
+}
+
 func GetJsonBTC(url string) {
 
-	items := ResultDataStock{}
-	getJson("https://bittrex.com/Api/v2.0/pub/market/GetTicks?marketName=USDT-BTC&tickInterval=Hour", &items)
-	outToCSVFile(items.Result, "d:\\tt.csv")
-	fmt.Println(items.Success)
+	var items_from_binance [][]string
+	var items_final []StockItem
+	var start_num time.Time
+	var end time.Time
+
+	end = (time.Now())
+	start_num = (time.Now().AddDate(0, 0, -1))
+
+	start_str := strconv.FormatInt(unixMilli(start_num), 10)
+	end_str := strconv.FormatInt(unixMilli(end), 10)
+	//threeDays := time.Hour * 24 * 3
+	//	diff := now.Add(threeDays)
+
+	getJson("https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=1h&startTime="+start_str+"&endTime="+end_str, &items_from_binance)
+	for i := 0; i < len(items_from_binance); i++ {
+		var v StockItem
+		v.D = items_from_binance[i][0]
+		v.T = items_from_binance[i][0]
+
+		v.O = toFloat(items_from_binance[i][1])
+		v.H = toFloat(items_from_binance[i][2])
+		v.L = toFloat(items_from_binance[i][3])
+		v.C = toFloat(items_from_binance[i][4])
+		v.V = toFloat(items_from_binance[i][5])
+		items_final = append(items_final, v)
+	}
+
+	outToCSVFile(items_final, "d:\\tt.csv")
+	fmt.Println(items_from_binance)
 
 }
