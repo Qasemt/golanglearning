@@ -24,5 +24,6 @@ func main() {
 	//stockwork.RUNStock("D:/workspace/stock/tseclient/normal/", "D:/out/", false)
 	//stockwork.RUNStock("D:/workspace/stock/tseclient/Adjusted/", "D:/out2/", true)
 	//testFunctions.TestRegex()
-	stockwork.ConvertStoockTODT7("D:/workspace/stock/data/forex/ff.csv", "D:/workspace/stock/data/forex/ff11.csv")
+	//stockwork.ConvertStoockTODT7("D:/workspace/stock/data/forex/ff.csv", "D:/workspace/stock/data/forex/ff11.csv")
+	stockwork.GetJsonBTC("")
 }

@@ -13,3 +13,4 @@
 src/logs/misc.log
 
 /src/logs
+src/__debug_bin

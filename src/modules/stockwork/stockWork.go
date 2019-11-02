@@ -6,12 +6,14 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"net/http"
 	"os"
 	"path"
 	"path/filepath"
 	"runtime"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/natefinch/lumberjack"
 	"github.com/sirupsen/logrus"
@@ -399,5 +401,116 @@ func ConvertStoockTODT7(src_file_csv string, dst_file_csv string) {
 		}
 	}
 	return
+
+}
+
+type StockItem struct {
+	O  float64
+	H  float64
+	L  float64
+	C  float64
+	V  float64
+	T  string
+	D  string
+	BV float64
+}
+type ResultDataStock struct {
+	Success bool        `json:"success"`
+	Message string      `json:"message"`
+	Result  []StockItem `json:"result"`
+}
+
+func outToCSVFile(items []StockItem, dst_file_csv string) bool {
+
+	var final_out = dst_file_csv
+
+	//var s [][]string
+
+	//:::::::::::::::::::::::::::::::::::::
+
+	file, err := os.Create(final_out)
+	if err != nil {
+		return false
+	}
+	defer file.Close()
+
+	writer := csv.NewWriter(file)
+	writer.UseCRLF = true
+	defer writer.Flush()
+
+	header1 := make([]string, 8)
+	header1[0] = "<DATE>"
+	header1[1] = "<TIME>"
+	header1[2] = "<OPEN>"
+	header1[3] = "<HIGH>"
+	header1[4] = "<LOW>"
+	header1[5] = "<CLOSE>"
+	header1[6] = "<VOLUME>"
+	header1[7] = "<OPEN>"
+
+	if err := writer.Write(header1); err != nil {
+		return false
+	}
+
+	for i := 0; i < len(items); i++ {
+
+		value := items[i]
+
+		final := make([]string, 8)
+
+		if value.D != "" {
+			final[0] = value.D
+		} else {
+			final[0] = "000000"
+		}
+
+		if value.T != "" {
+			final[1] = value.T
+		} else {
+			final[1] = "000000"
+		}
+
+		final[2] = strconv.FormatFloat(value.O, 'f', 4, 64)
+		final[3] = strconv.FormatFloat(value.H, 'f', 4, 64)
+		final[4] = strconv.FormatFloat(value.L, 'f', 4, 64)
+		final[5] = strconv.FormatFloat(value.C, 'f', 4, 64)
+		final[6] = strconv.FormatFloat(value.V, 'f', 4, 64)
+		final[7] = strconv.FormatFloat(value.BV, 'f', 4, 64)
+
+		if err := writer.Write(final); err != nil {
+			return false
+		}
+	}
+	return true
+
+}
+
+func getJson(url string, target_object_json interface{}) error {
+	var myClient = &http.Client{Timeout: 15 * time.Second}
+	r, err := myClient.Get(url)
+	if err != nil {
+		return err
+	}
+	defer r.Body.Close()
+
+	body, err := ioutil.ReadAll(r.Body)
+
+	if err != nil {
+		panic(err.Error())
+	}
+
+	json.Unmarshal(body, &target_object_json)
+
+	return err
+	//return json.NewDecoder(r.Body).Decode(target)
+}
+
+//{"success":true,"message":"","result":[{"O":10549.85999999,"H":10735.67000000,"L":10527.97588008,"C":10665.00000000,"V":49.14918427,"T":"2019-09-03T13:00:00","BV":522653.57417097},{"O":10665.00000000,"H":10752.20000000,"L":10572.17977203,"C":10618.99616958,"V":31.88953528,"T":"2019-09-03T14:00:00","BV":340198.37486701},
+func GetJsonBTC(url string) {
+
+	items := ResultDataStock{}
+	getJson("https://bittrex.com/Api/v2.0/pub/market/GetTicks?marketName=USDT-BTC&tickInterval=Hour", &items)
+	outToCSVFile(items.Result, "d:\\tt.csv")
+	fmt.Println(items.Success)
 
 }
