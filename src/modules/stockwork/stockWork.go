@@ -8,6 +8,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path"
+	"path/filepath"
 	"runtime"
 	"strconv"
 	"strings"
@@ -22,6 +23,16 @@ var path_src_dir string = ""
 var path_dst_dir string = ""
 var log = logrus.New()
 
+func toInt(s string) int64 {
+
+	f, e := strconv.ParseInt(s, 10, 64)
+
+	if e != nil {
+		return -1
+	}
+
+	return f
+}
 func CastInt(s string) string {
 
 	f, e := strconv.ParseFloat(s, 64)
@@ -31,6 +42,16 @@ func CastInt(s string) string {
 	}
 
 	return strconv.FormatInt(int64(f), 10)
+}
+func CastFloat(f string) string {
+	var res string
+	f = strings.Replace(f, " ", "", -1)
+	if s, err := strconv.ParseFloat(f, 64); err == nil {
+		//res = fmt.Sprintf("%0.0000f", s)
+		res = strconv.FormatFloat(s, 'f', 4, 64)
+
+	}
+	return res
 }
 
 //::::::::::::::::::::::::::::::::::::::::::::::::::::::::: FUNCATIONs
@@ -131,7 +152,7 @@ func csvExport(data []stockRecord, out string) error {
 
 	writer := csv.NewWriter(file)
 	defer writer.Flush()
-
+	writer.UseCRLF = true
 	for _, value := range data {
 		var final []string
 
@@ -263,5 +284,120 @@ func RUNStock(src_dir string, dst_dir string, is_adj bool) {
 
 	}
 	log.Info("finished >>>")
+
+}
+
+func ConvertStoockTODT7(src_file_csv string, dst_file_csv string) {
+
+	var final_out = dst_file_csv
+	if _, err := os.Stat(src_file_csv); os.IsNotExist(err) {
+
+		log.Errorf("dir not exist :[ %v ]\n", src_file_csv)
+		return
+	}
+
+	f, _ := os.Open(src_file_csv)
+
+	if dst_file_csv == "" {
+		var fname = strings.Split(filepath.Base(src_file_csv), ".")[0] + "_out.csv"
+
+		var src_dir_name = filepath.Dir(src_file_csv)
+
+		final_out = path.Join(src_dir_name, fname)
+
+		fmt.Println(fname, src_dir_name, final_out)
+	}
+	var s [][]string
+	var list []stockRecord
+	r := csv.NewReader(f)
+	var i = 0
+	for {
+
+		record, err := r.Read()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return
+			//panic(err)
+		}
+		s = append(s, record)
+		var f stockRecord
+		if i == 0 {
+			f = stockRecord{
+				DATE:    record[0],
+				TIME:    "<TIME>",
+				OPEN:    record[1],
+				HIGH:    record[2],
+				LOW:     record[3],
+				CLOSE:   record[4],
+				VOLUME:  "VOLUME",
+				OPENINT: "OPEN",
+			}
+		} else {
+			f = stockRecord{
+				DATE:    record[0],
+				TIME:    "000000",
+				OPEN:    record[1],
+				HIGH:    record[2],
+				LOW:     record[3],
+				CLOSE:   record[4],
+				VOLUME:  "000000",
+				OPENINT: "0",
+			}
+			// if record[4]!=""{
+			//  f.VOLUME = record[3]
+			// }
+		}
+		list = append(list, f)
+		i++
+	}
+
+	//:::::::::::::::::::::::::::::::::::::
+
+	file, err := os.Create(final_out)
+	if err != nil {
+		return
+	}
+	defer file.Close()
+
+	writer := csv.NewWriter(file)
+	defer writer.Flush()
+	//for i := len(s) - 1; i >= 0; i-- {
+	for i := 0; i < len(s); i++ {
+		//for _, value := range list {
+		value := list[i]
+		var final []string
+
+		if i == 0 {
+			final = value.toString(false)
+		} else {
+			final = make([]string, 8)
+			// t, e := time.Parse(
+			// 	time.RFC3339,
+			// 	value.DATE)
+			// fmt.Println(t, e)
+
+			//var s []string
+			//s = strings.Split(value.DATE, "/")
+			//	value.DATE = strconv.FormatInt(int64((toInt(s[2])+2000)), 10) + "" + s[0] + "" + s[1]
+
+			value.DATE = strings.Replace(value.DATE, "-", "", -1)
+
+			final[0] = value.DATE
+			final[1] = value.TIME
+			final[2] = CastFloat(value.OPEN)
+			final[3] = CastFloat(value.HIGH)
+			final[4] = CastFloat(value.LOW)
+			final[5] = CastFloat(value.CLOSE)
+			final[6] = CastFloat(value.VOLUME)
+			final[7] = value.OPENINT
+		}
+		writer.UseCRLF = true
+		if err := writer.Write(final); err != nil {
+			return // let's return errors if necessary, rather than having a one-size-fits-all error handler
+		}
+	}
+	return
 
 }
