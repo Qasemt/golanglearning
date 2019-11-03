@@ -6,15 +6,12 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
-	"net/http"
-	"net/url"
 	"os"
 	"path"
 	"path/filepath"
 	"runtime"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/natefinch/lumberjack"
 	"github.com/sirupsen/logrus"
@@ -53,26 +50,6 @@ func CastFloat(f string) string {
 		//res = fmt.Sprintf("%0.0000f", s)
 		res = strconv.FormatFloat(s, 'f', 4, 64)
 
-	}
-	return res
-}
-func toFloat(f string) float64 {
-	var res float64
-
-	f = strings.Replace(f, " ", "", -1)
-	res, err := strconv.ParseFloat(f, 64)
-	if err != nil {
-		res = 0
-	}
-	return res
-}
-func toINT64(v string) int64 {
-	var res int64
-
-	v = strings.Replace(v, " ", "", -1)
-	res, err := strconv.ParseInt(v, 10, 64)
-	if err != nil {
-		res = 0
 	}
 	return res
 }
@@ -422,181 +399,5 @@ func ConvertStoockTODT7(src_file_csv string, dst_file_csv string) {
 		}
 	}
 	return
-
-}
-
-type StockItem struct {
-	D string
-	T string
-
-	O float64
-	H float64
-	L float64
-	C float64
-	V float64
-
-	BV float64
-}
-
-func outToCSVFile(items []StockItem, dst_file_csv string) bool {
-
-	var final_out = dst_file_csv
-
-	//var s [][]string
-
-	//:::::::::::::::::::::::::::::::::::::
-
-	file, err := os.Create(final_out)
-	if err != nil {
-		return false
-	}
-	defer file.Close()
-
-	writer := csv.NewWriter(file)
-	writer.UseCRLF = true
-	defer writer.Flush()
-
-	header1 := make([]string, 8)
-	header1[0] = "<DATE>"
-	header1[1] = "<TIME>"
-	header1[2] = "<OPEN>"
-	header1[3] = "<HIGH>"
-	header1[4] = "<LOW>"
-	header1[5] = "<CLOSE>"
-	header1[6] = "<VOLUME>"
-	header1[7] = "<OPEN>"
-
-	if err := writer.Write(header1); err != nil {
-		return false
-	}
-
-	for i := 0; i < len(items); i++ {
-
-		value := items[i]
-
-		final := make([]string, 8)
-
-		if value.D != "" {
-			final[0] = value.D
-		} else {
-			final[0] = "000000"
-		}
-
-		if value.T != "" {
-			final[1] = value.T
-		} else {
-			final[1] = "000000"
-		}
-
-		final[2] = strconv.FormatFloat(value.O, 'f', 4, 64)
-		final[3] = strconv.FormatFloat(value.H, 'f', 4, 64)
-		final[4] = strconv.FormatFloat(value.L, 'f', 4, 64)
-		final[5] = strconv.FormatFloat(value.C, 'f', 4, 64)
-		final[6] = strconv.FormatFloat(value.V, 'f', 4, 64)
-		final[7] = strconv.FormatFloat(value.BV, 'f', 4, 64)
-
-		if err := writer.Write(final); err != nil {
-			return false
-		}
-	}
-	return true
-
-}
-
-func getJson(url_path string, target_object_json interface{}) error {
-
-	fmt.Println(url_path)
-	fixedURL, err := url.Parse("http://103.21.150.184:3128")
-	if err != nil {
-		fmt.Println("Malformed URL: ", err.Error())
-		return err
-	}
-
-	transport := &http.Transport{Proxy: http.ProxyURL(fixedURL)}
-
-	var myClient = &http.Client{Timeout: 15 * time.Second, Transport: transport}
-	r, err := myClient.Get(url_path)
-	if err != nil {
-		return err
-	}
-	defer r.Body.Close()
-
-	body, err := ioutil.ReadAll(r.Body)
-
-	if err != nil {
-		panic(err.Error())
-	}
-
-	json.Unmarshal(body, &target_object_json)
-	//fmt.Printf("body len : %v\n %v\n", len(body), string(body))
-	return err
-	//return json.NewDecoder(r.Body).Decode(target)
-}
-func unixMilli(t time.Time) int64 {
-	return t.Round(time.Millisecond).UnixNano() / (int64(time.Millisecond) / int64(time.Nanosecond))
-}
-
-type StockItemBinance struct {
-	// Open_time          int64  `json:"0"`
-	// O                  string `json:"1"`
-	// H                  string `json:"2"`
-	// L                  string `json:"3"`
-	// C                  string `json:"4"`
-	// V                  string `json:"5"`
-	// Close_time         int64  `json:"6"`
-	// Quote_asset_volume string `json:"7"`
-	// Number_of_trades   int64  `json:"8"`
-	// Rev1               string `json:"9"`
-	// Rev2               string `json:"10"`
-	// Rev3               string `json:"11"`
-
-	Open_time          int64
-	O                  string
-	H                  string
-	L                  string
-	C                  string
-	V                  string
-	Close_time         int64
-	Quote_asset_volume string
-	Number_of_trades   int64
-	Rev1               string
-	Rev2               string
-	Rev3               string
-}
-type ResultBinanceStock struct {
-	Result []StockItemBinance
-}
-
-func GetJsonBTC(url string) {
-
-	var items_from_binance [][]string
-	var items_final []StockItem
-	var start_num time.Time
-	var end time.Time
-
-	end = (time.Now())
-	start_num = (time.Now().AddDate(0, 0, -1))
-
-	start_str := strconv.FormatInt(unixMilli(start_num), 10)
-	end_str := strconv.FormatInt(unixMilli(end), 10)
-	//threeDays := time.Hour * 24 * 3
-	//	diff := now.Add(threeDays)
-
-	getJson("https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=1h&startTime="+start_str+"&endTime="+end_str, &items_from_binance)
-	for i := 0; i < len(items_from_binance); i++ {
-		var v StockItem
-		v.D = items_from_binance[i][0]
-		v.T = items_from_binance[i][0]
-
-		v.O = toFloat(items_from_binance[i][1])
-		v.H = toFloat(items_from_binance[i][2])
-		v.L = toFloat(items_from_binance[i][3])
-		v.C = toFloat(items_from_binance[i][4])
-		v.V = toFloat(items_from_binance[i][5])
-		items_final = append(items_final, v)
-	}
-
-	outToCSVFile(items_final, "d:\\tt.csv")
-	fmt.Println(items_from_binance)
 
 }

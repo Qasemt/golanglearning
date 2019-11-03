@@ -2,6 +2,9 @@ package main
 
 import (
 	"fmt"
+	"time"
+
+	"./modules/helper"
 
 	"./modules/stockwork"
 	//"./testFunctions"
@@ -25,5 +28,9 @@ func main() {
 	//stockwork.RUNStock("D:/workspace/stock/tseclient/Adjusted/", "D:/out2/", true)
 	//testFunctions.TestRegex()
 	//stockwork.ConvertStoockTODT7("D:/workspace/stock/data/forex/ff.csv", "D:/workspace/stock/data/forex/ff11.csv")
-	stockwork.GetJsonBTC("")
+	helper.SetProxy("http://183.88.228.208:8080")
+	end := (time.Now())
+	start_num := (time.Now().AddDate(0, 0, -1))
+	stockwork.GetAsset("", "BTCUSDT", start_num, end)
+
 }
