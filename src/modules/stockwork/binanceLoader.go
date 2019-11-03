@@ -2,6 +2,8 @@ package stockwork
 
 import (
 	"fmt"
+	"os"
+	"path"
 	"strconv"
 	"time"
 
@@ -33,6 +35,18 @@ func floatFromString(raw interface{}) (float64, error) {
 	}
 	return flt, nil
 }
+func int64FromString(raw interface{}) (int64, error) {
+	str, ok := raw.(string)
+	if !ok {
+		return 0, nil
+	}
+	println(str)
+	n, err := strconv.ParseInt(str, 10, 64)
+	if err != nil {
+		return 0, nil
+	}
+	return n, nil
+}
 func timeFromUnixTimestampFloat(raw interface{}) (time.Time, error) {
 	ts, ok := raw.(float64)
 	if !ok {
@@ -41,68 +55,185 @@ func timeFromUnixTimestampFloat(raw interface{}) (time.Time, error) {
 	return time.Unix(0, int64(ts)*int64(time.Millisecond)), nil
 }
 
-func GetAsset(url string, asset_name string, start time.Time, end time.Time) {
+type TimeRange struct {
+	File_name string
+	Begin     time.Time
+	End       time.Time
+}
+
+func GetAsset(asset_name string, start time.Time, end time.Time, timeframe string, final_out string) error {
 
 	rawKlines := [][]interface{}{}
-	//var items_from_binance [][]string
+	day_rang := []TimeRange{}
+	file_list := []string{}
+	var dir_path string
+	dir_path = "d:\\cache\\" + asset_name + "\\" + timeframe
 
 	var items_final []helper.StockItem
 
-	start_str := strconv.FormatInt(helper.UnixMilli(start), 10)
-	end_str := strconv.FormatInt(helper.UnixMilli(end), 10)
+	//threeDays := time.Hour * 24 * 3
+	//	diff := now.Add(threeDays)
+	diff := end.Sub(start) / (24 * time.Hour)
+
+	for i := 1; i <= int(diff); i++ {
+		var tt = start.AddDate(0, 0, i)
+
+		var d1 TimeRange
+		d1.File_name = helper.TimeToString(tt, "yyyymmdd") + ".csv"
+		y, m, d := tt.Date()
+		d1.Begin = time.Date(y, m, d, 0, 0, 0, 0, tt.Location())
+
+		d1.End = time.Date(y, m, d, 23, 59, 59, int(time.Second-time.Nanosecond), tt.Location())
+
+		day_rang = append(day_rang, d1)
+	}
+	for _, item := range day_rang {
+		items_final = items_final[:0]
+
+		start_str := strconv.FormatInt(helper.UnixMilli(item.Begin), 10)
+		end_str := strconv.FormatInt(helper.UnixMilli(item.End), 10)
+
+		var final_out = path.Join(dir_path, item.File_name)
+		file_list = append(file_list, item.File_name)
+
+		if item.Begin.Year() == time.Now().Year() && item.Begin.Month() == time.Now().Month() && item.Begin.Day() == time.Now().Day() {
+			var err = os.Remove(final_out)
+			if err != nil {
+				return err
+			}
+		}
+
+		if _, err := os.Stat(final_out); !os.IsNotExist(err) {
+			continue
+		}
+
+		err := helper.GetJson("https://api.binance.com/api/v3/klines?symbol="+asset_name+"&interval="+timeframe+"&startTime="+start_str+"&endTime="+end_str, &rawKlines)
+		if err != nil {
+
+			fmt.Println(err)
+			panic(err)
+		}
+
+		for _, k := range rawKlines {
+			var v helper.StockItem
+			time1, _ := timeFromUnixTimestampFloat(k[0])
+
+			v.D = helper.UnixTimeStrToFormatDT(time1, true)
+			v.T = helper.UnixTimeStrToFormatDT(time1, false)
+
+			open, _ := floatFromString(k[1])
+			v.O = open
+
+			high, _ := floatFromString(k[2])
+			v.H = high
+
+			low1, _ := floatFromString(k[3])
+			v.L = low1
+
+			close, _ := floatFromString(k[4])
+			v.C = close
+
+			volume, _ := floatFromString(k[5])
+			v.V = volume
+
+			items_final = append(items_final, v)
+
+		}
+		if len(items_final) > 0 {
+			helper.OutToCSVFile(items_final, dir_path, item.File_name, false)
+		}
+	}
+	helper.JoinCSVFiles(dir_path, file_list, final_out)
+
+	return nil
+}
+
+func GetAssetYear(asset_name string, start time.Time, end time.Time, timeframe string, final_out string) error {
+
+	rawKlines := [][]interface{}{}
+	day_rang := []TimeRange{}
+	file_list := []string{}
+	var dir_path string
+	dir_path = "d:\\cache\\" + asset_name + "\\" + timeframe
+
+	var items_final []helper.StockItem
 
 	//threeDays := time.Hour * 24 * 3
 	//	diff := now.Add(threeDays)
+	diff := end.Sub(start) / ((24 * time.Hour) * 360)
 
-	err := helper.GetJson("https://api.binance.com/api/v3/klines?symbol="+asset_name+"&interval=1h&startTime="+start_str+"&endTime="+end_str, &rawKlines)
-	if err != nil {
+	for i := 0; i <= int(diff); i++ {
+		var tt = start.AddDate(i, 0, 0)
 
-		fmt.Println(err)
-		panic(err)
+		var d1 TimeRange
+		d1.File_name = helper.TimeToString(tt, "yyyy") + ".csv"
+		y, _, _ := tt.Date()
+		d1.Begin = time.Date(y, 1, 1, 0, 0, 0, 0, tt.Location())
+
+		d1.End = time.Date(y, 12, 31, 23, 59, 59, int(time.Second-time.Nanosecond), tt.Location())
+
+		day_rang = append(day_rang, d1)
 	}
-	//klines := []*Kline{}
-	for _, k := range rawKlines {
-		var v helper.StockItem
-		time1, _ := timeFromUnixTimestampFloat(k[0])
 
-		v.D = helper.UnixTimeStrToFormatDT(time1, true)
-		v.T = helper.UnixTimeStrToFormatDT(time1, false)
+	for _, item := range day_rang {
+		items_final = items_final[:0]
 
-		open, _ := floatFromString(k[1])
-		v.O = open
+		start_str := strconv.FormatInt(helper.UnixMilli(item.Begin), 10)
+		end_str := strconv.FormatInt(helper.UnixMilli(item.End), 10)
 
-		high, _ := floatFromString(k[2])
-		v.H = high
+		var final_out = path.Join(dir_path, item.File_name)
+		file_list = append(file_list, item.File_name)
 
-		low1, _ := floatFromString(k[3])
-		v.L = low1
+		if _, err := os.Stat(final_out); !os.IsNotExist(err) {
+			if item.Begin.Year() == time.Now().Year() {
+				var err = os.Remove(final_out)
+				if err != nil {
+					return err
+				}
+			}
 
-		close, _ := floatFromString(k[4])
-		v.C = close
+			continue
+		} else {
 
-		volume, _ := floatFromString(k[5])
-		v.V = volume
+		}
 
-		items_final = append(items_final, v)
+		err := helper.GetJson("https://api.binance.com/api/v3/klines?symbol="+asset_name+"&interval="+timeframe+"&startTime="+start_str+"&endTime="+end_str, &rawKlines)
+		if err != nil {
 
+			fmt.Println(err)
+			panic(err)
+		}
+
+		for _, k := range rawKlines {
+			var v helper.StockItem
+			time1, _ := timeFromUnixTimestampFloat(k[0])
+
+			v.D = helper.UnixTimeStrToFormatDT(time1, true)
+			v.T = helper.UnixTimeStrToFormatDT(time1, false)
+
+			open, _ := floatFromString(k[1])
+			v.O = open
+
+			high, _ := floatFromString(k[2])
+			v.H = high
+
+			low1, _ := floatFromString(k[3])
+			v.L = low1
+
+			close, _ := floatFromString(k[4])
+			v.C = close
+
+			volume, _ := floatFromString(k[5])
+			v.V = volume
+
+			items_final = append(items_final, v)
+
+		}
+		if len(items_final) > 0 {
+			helper.OutToCSVFile(items_final, dir_path, item.File_name, false)
+		}
 	}
-	// for i := 0; i < len(rawKlines); i++ {
-	// 	t := rawKlines[i]
-	// 	var v helper.StockItem
+	helper.JoinCSVFiles(dir_path, file_list, final_out)
 
-	// 	v.D = helper.UnixTimeStrToTimeFormat(t[0], true)
-	// 	v.T = helper.UnixTimeStrToTimeFormat(t[0], false)
-
-	// 	v.O = helper.ToFloat(t[1])
-	// 	v.H = helper.ToFloat(t[2])
-	// 	v.L = helper.ToFloat(t[3])
-	// 	v.C = helper.ToFloat(t[4])
-	// 	v.V = helper.ToFloat(t[5])
-	// 	items_final = append(items_final, v)
-	// }
-
-	//	helper.OutToCSVFile(items_final, "d:\\tt.csv")
-	//fmt.Println(items_from_binance)
-	fmt.Println(items_final)
-
+	return nil
 }

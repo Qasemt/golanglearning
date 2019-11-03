@@ -28,9 +28,14 @@ func main() {
 	//stockwork.RUNStock("D:/workspace/stock/tseclient/Adjusted/", "D:/out2/", true)
 	//testFunctions.TestRegex()
 	//stockwork.ConvertStoockTODT7("D:/workspace/stock/data/forex/ff.csv", "D:/workspace/stock/data/forex/ff11.csv")
-	helper.SetProxy("http://183.88.228.208:8080")
+	helper.SetProxy("http://191.102.106.1:8181")
 	end := (time.Now())
-	start_num := (time.Now().AddDate(0, 0, -1))
-	stockwork.GetAsset("", "BTCUSDT", start_num, end)
+	start_num := (time.Now().AddDate(0, 0, -100))
+	stockwork.GetAsset("BTCUSDT", start_num, end, "4h", "D:\\workspace\\stock\\data\\crypto\\new\\btcusdt_h4.csv")
+	stockwork.GetAsset("BTCUSDT", start_num, end, "1h", "D:\\workspace\\stock\\data\\crypto\\new\\btcusdt_h1.csv")
+	stockwork.GetAsset("BTCUSDT", start_num, end, "2h", "D:\\workspace\\stock\\data\\crypto\\new\\btcusdt_h2.csv")
+
+	start_num = (time.Now().AddDate(-2, 0, 0))
+	stockwork.GetAssetYear("BTCUSDT", start_num, end, "1d", "D:\\workspace\\stock\\data\\crypto\\new\\btcusdt_d.csv")
 
 }
