@@ -1,6 +1,19 @@
-{
+{ 
+   "files.exclude": {
+  "**/.git": true,
+  "**/.svn": true,
+  "**/.hg": true,
+  "**/CVS": true,
+  "**/.DS_Store": true,
+  "__debug_bin": true,
+  "vendor/": true,
+  "go.sum": true
+},
     "go.lintOnSave": "workspace",
     "go.lintTool": "gometalinter",
+    "go.useLanguageServer": true,
+    "go.docsTool": "gogetdoc",
+    //"go.inferGopath": true,
     "go.toolsEnvVars": {
         "GO111MODULE": "on",
       //  "GOFLAGS": "-mod=vendor"

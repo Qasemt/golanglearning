@@ -89,7 +89,7 @@ func GetAsset(asset_name string, start time.Time, end time.Time, timeframe strin
 	}
 	for _, item := range day_rang {
 		items_final = items_final[:0]
-
+		fmt.Println(item)
 		start_str := strconv.FormatInt(helper.UnixMilli(item.Begin), 10)
 		end_str := strconv.FormatInt(helper.UnixMilli(item.End), 10)
 
@@ -184,16 +184,16 @@ func GetAssetYear(asset_name string, start time.Time, end time.Time, timeframe s
 		var final_out = path.Join(dir_path, item.File_name)
 		file_list = append(file_list, item.File_name)
 
-		if helper.IsExist(final_out) {
-			if item.Begin.Year() == time.Now().Year() {
-				var err = os.Remove(final_out)
-				if err != nil {
-					return err
-				}
+		if helper.IsExist(final_out) && item.Begin.Year() == time.Now().Year() {
+			var err = os.Remove(final_out)
+			if err != nil {
+				fmt.Println(err)
+				return err
 			}
-
+		} else if helper.IsExist(final_out) {
 			continue
 		}
+		fmt.Printf(">>> %v %v %v \n", asset_name, timeframe, helper.TimeToString(item.Begin, "yyyy-mm-dd"))
 
 		err := helper.GetJson("https://api.binance.com/api/v3/klines?symbol="+asset_name+"&interval="+timeframe+"&startTime="+start_str+"&endTime="+end_str, &rawKlines)
 		if err != nil {

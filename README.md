@@ -9,3 +9,8 @@ go build -o t.exe -ldflags "-s -w"
 ```
 go get -u github.com/sirupsen/logrus
 ```
+# src 
+```
+vs code config
+https://www.youtube.com/watch?v=NphW8lvJ_fg
+```
