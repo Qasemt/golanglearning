@@ -41,6 +41,13 @@ func UnixTimeToTime(millis int64) time.Time {
 	tm := time.Unix(millis, 0)
 	return tm
 }
+func IsExist(p string) bool {
+	res := false
+	if _, err := os.Stat(p); !os.IsNotExist(err) {
+		res = true
+	}
+	return res
+}
 func TimeToString(t time.Time, format string) string {
 	var formatted string
 	if format == "yyyymmdd" {

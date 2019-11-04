@@ -184,7 +184,7 @@ func GetAssetYear(asset_name string, start time.Time, end time.Time, timeframe s
 		var final_out = path.Join(dir_path, item.File_name)
 		file_list = append(file_list, item.File_name)
 
-		if _, err := os.Stat(final_out); !os.IsNotExist(err) {
+		if helper.IsExist(final_out) {
 			if item.Begin.Year() == time.Now().Year() {
 				var err = os.Remove(final_out)
 				if err != nil {
@@ -193,8 +193,6 @@ func GetAssetYear(asset_name string, start time.Time, end time.Time, timeframe s
 			}
 
 			continue
-		} else {
-
 		}
 
 		err := helper.GetJson("https://api.binance.com/api/v3/klines?symbol="+asset_name+"&interval="+timeframe+"&startTime="+start_str+"&endTime="+end_str, &rawKlines)
