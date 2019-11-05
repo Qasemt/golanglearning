@@ -33,6 +33,7 @@ func floatFromString(raw interface{}) (float64, error) {
 	if err != nil {
 		//	return 0, errors.Wrap(err, fmt.Sprintf("unable to parse as float: %s", str))
 		return 0, nil
+
 	}
 	return flt, nil
 }

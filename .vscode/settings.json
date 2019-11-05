@@ -9,10 +9,13 @@
   "vendor/": true,
   "go.sum": true
 },
-    "go.lintOnSave": "workspace",
+    "go.lintOnSave": "off",
     "go.lintTool": "gometalinter",
     "go.useLanguageServer": true,
     "go.docsTool": "gogetdoc",
+    "go.autocompleteUnimportedPackages": true,
+    
+ 
     //"go.inferGopath": true,
     "go.toolsEnvVars": {
        // "GO111MODULE": "on",
