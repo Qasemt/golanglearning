@@ -1,0 +1,7 @@
+module golanglearning
+
+require modules/helper v0.0.0
+
+replace modules/helper v0.0.0 => ./modules/helper
+
+go 1.13

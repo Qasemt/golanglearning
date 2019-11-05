@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"time"
 
-	"../helper"
+	"./../helper"
 )
 
 // Open_time          int64  `json:"0"`
@@ -22,6 +22,7 @@ import (
 // Rev1               string `json:"9"`
 // Rev2               string `json:"10"`
 // Rev3               string `json:"11"`
+
 func floatFromString(raw interface{}) (float64, error) {
 	str, ok := raw.(string)
 	if !ok {
