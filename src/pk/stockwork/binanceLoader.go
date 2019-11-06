@@ -1,13 +1,14 @@
 package stockwork
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"path"
 	"strconv"
 	"time"
 
-	"./../helper"
+	"../helper"
 )
 
 type ETimeFrame int
@@ -132,12 +133,10 @@ func GetAsset(asset_name string, start time.Time, end time.Time, timeframe ETime
 			continue
 		}
 
-		fmt.Println(timeframe, item)
+		fmt.Printf(">>> %v %v %v \n", asset_name, timeframe.String(), helper.TimeToString(item.Begin, "yyyy-mm-dd"))
 		err := helper.GetJson("https://api.binance.com/api/v3/klines?symbol="+asset_name+"&interval="+timeframe.String()+"&startTime="+start_str+"&endTime="+end_str, &rawKlines)
 		if err != nil {
-
-			fmt.Println(err)
-			panic(err)
+			return err
 		}
 
 		for _, k := range rawKlines {
@@ -166,10 +165,14 @@ func GetAsset(asset_name string, start time.Time, end time.Time, timeframe ETime
 
 		}
 		if len(items_final) > 0 {
-			helper.OutToCSVFile(items_final, dir_cache_path, item.File_name, false)
+			if !helper.OutToCSVFile(items_final, dir_cache_path, item.File_name, false) {
+				return errors.New("get asset >>> out to csv failed")
+			}
 		}
 	}
-	helper.JoinCSVFiles(dir_cache_path, file_list, final_out, last_candel)
+	if !helper.JoinCSVFiles(dir_cache_path, file_list, final_out, last_candel) {
+		return errors.New("get asset >>> join last candel failed")
+	}
 
 	return nil
 }
@@ -190,6 +193,8 @@ func GetAssetCreateLastCandel(asset_name string, end time.Time, timeframe ETimeF
 		diff = time.Hour * 2
 	} else if timeframe == H4 {
 		diff = time.Hour * 4
+	} else if timeframe == M15 {
+		diff = time.Minute * 15
 	}
 
 	if timeframe == D1 {
@@ -203,15 +208,13 @@ func GetAssetCreateLastCandel(asset_name string, end time.Time, timeframe ETimeF
 	}
 
 	items_final = items_final[:0]
-	fmt.Println(item)
+	//fmt.Println(item)
 	start_str := strconv.FormatInt(helper.UnixMilli(item.Begin), 10)
 	end_str := strconv.FormatInt(helper.UnixMilli(item.End), 10)
 
 	err := helper.GetJson("https://api.binance.com/api/v3/klines?symbol="+asset_name+"&interval=1m&startTime="+start_str+"&endTime="+end_str, &rawKlines)
 	if err != nil {
-
-		fmt.Println(err)
-		return (err)
+		return err
 	}
 
 	for _, k := range rawKlines {
@@ -281,9 +284,7 @@ func GetAssetCreateLastCandel2(asset_name string, end time.Time, timeframe ETime
 		end_str := strconv.FormatInt(helper.UnixMilli(end), 10)
 		err := helper.GetJson("https://api.binance.com/api/v3/klines?symbol="+asset_name+"&interval=3m&startTime="+start_str+"&endTime="+end_str, &global_rawKlines)
 		if err != nil {
-
-			fmt.Println(err)
-			return (err)
+			return err
 		}
 	}
 	//::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
@@ -412,9 +413,7 @@ func GetAssetYear(asset_name string, start time.Time, end time.Time, timeframe E
 
 		err := helper.GetJson("https://api.binance.com/api/v3/klines?symbol="+asset_name+"&interval="+timeframe.String()+"&startTime="+start_str+"&endTime="+end_str, &rawKlines)
 		if err != nil {
-
-			fmt.Println(err)
-			panic(err)
+			return err
 		}
 
 		for _, k := range rawKlines {
@@ -443,11 +442,15 @@ func GetAssetYear(asset_name string, start time.Time, end time.Time, timeframe E
 
 		}
 		if len(items_final) > 0 {
-			helper.OutToCSVFile(items_final, dir_cache_path, item.File_name, false)
+			if !helper.OutToCSVFile(items_final, dir_cache_path, item.File_name, false) {
+				return errors.New("get asset daily >>> out to csv failed")
+			}
 		}
 	}
 
-	helper.JoinCSVFiles(dir_cache_path, file_list, final_out, last_candel)
+	if !helper.JoinCSVFiles(dir_cache_path, file_list, final_out, last_candel) {
+		return errors.New("get asset daily >>> join last candel failed")
+	}
 
 	return nil
 }

@@ -13,12 +13,15 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"h12.io/socks"
 )
 
 var url_proxy string
+var is_Socks bool
 
 //::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-func SetProxy(v string) error {
+func SetProxy(v string, is_socks bool) error {
 
 	_, err := url.Parse(v)
 	if err != nil {
@@ -26,6 +29,7 @@ func SetProxy(v string) error {
 		return err
 	}
 	url_proxy = v
+	is_Socks = is_socks
 	return nil
 }
 
@@ -119,19 +123,31 @@ func ToINT64(v string) int64 {
 
 func GetJson(url_path string, target_object_json interface{}) error {
 	//https://github.com/binance-exchange/go-binance/blob/1af034307da53bf592566c5c8a90856ddb5b34a4/util.go#L49
-	fmt.Println(url_path)
+	//fmt.Println(url_path)
 	var myClient *http.Client
 	if GetProxy() != "" {
-		fixedURL, err := url.Parse(GetProxy())
-		if err != nil {
-			fmt.Println("Malformed URL: ", err.Error())
-			return err
-		}
-		transport := &http.Transport{Proxy: http.ProxyURL(fixedURL)}
+		if is_Socks {
+			fixedURL, err := url.Parse(GetProxy())
+			if err != nil {
+				fmt.Println("Malformed URL: ", err.Error())
+				return err
+			}
+			transport := &http.Transport{Proxy: http.ProxyURL(fixedURL)}
 
-		myClient = &http.Client{Timeout: 30 * time.Second, Transport: transport}
+			myClient = &http.Client{Timeout: 30 * time.Second, Transport: transport}
+		} else {
+			dialSocksProxy := socks.Dial("socks5://" + GetProxy() + "?timeout=15s")
+			tr := &http.Transport{Dial: dialSocksProxy}
+
+			// dialSocksProxy, err := proxy.SOCKS5("tcp", GetProxy(), nil, proxy.Direct)
+			// if err != nil {
+			// 	fmt.Println("Error connecting to proxy:", err)
+			// }
+			// tr := &http.Transport{Dial: dialSocksProxy.Dial}
+			myClient = &http.Client{Timeout: 30 * time.Second, Transport: tr}
+		}
 	} else {
-		myClient = &http.Client{Timeout: 30 * time.Second}
+		myClient = &http.Client{Timeout: 60 * time.Second}
 	}
 	r, err := myClient.Get(url_path)
 	if err != nil {
@@ -297,7 +313,7 @@ func JoinCSVFiles(dir_path string, dst_file_csv_list []string, out_final_file st
 
 	// Create a new reader.
 	r1 := csv.NewReader(f1)
-
+	defer f1.Close()
 	for {
 		record, err := r1.Read()
 		// Stop at EOF.
