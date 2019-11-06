@@ -14,7 +14,7 @@
     "go.useLanguageServer": true,
     "go.docsTool": "gogetdoc",
     "go.autocompleteUnimportedPackages": true,
-    
+
  
     //"go.inferGopath": true,
     "go.toolsEnvVars": {
@@ -24,4 +24,9 @@
 "go.lintFlags": [
 //	"--exclude=\"\bexported \\w+ (\\S*['.]*)([a-zA-Z'.*]*) should have comment or be unexported\b\""
 ],
+"[go]": {
+  "editor.formatOnSave": false
+},
+"go.testTimeout": "60s",
+"go.formatTool": "gofmt"
 }

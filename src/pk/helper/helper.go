@@ -234,7 +234,7 @@ func OutToCSVFile(items []StockItem, dir_path string, dst_file_csv string, is_ad
 	return true
 
 }
-func JoinCSVFiles(dir_path string, dst_file_csv_list []string, out_final_file string) bool {
+func JoinCSVFiles(dir_path string, dst_file_csv_list []string, out_final_file string, last_value_from_1m string) bool {
 
 	if _, err := os.Stat(dir_path); os.IsNotExist(err) {
 		return false
@@ -289,6 +289,27 @@ func JoinCSVFiles(dir_path string, dst_file_csv_list []string, out_final_file st
 				return false
 			}
 
+		}
+
+	}
+	//---------- last value from timeframe 1minute
+	f1, _ := os.Open(last_value_from_1m)
+
+	// Create a new reader.
+	r1 := csv.NewReader(f1)
+
+	for {
+		record, err := r1.Read()
+		// Stop at EOF.
+		if err == io.EOF {
+			break
+		}
+
+		if err != nil {
+			return false
+		}
+		if err := writer.Write(record); err != nil {
+			return false
 		}
 
 	}
