@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"time"
 
-	h "./pk/helper"
-	st "./pk/stockwork"
+	h "github.com/qasemt/helper"
+	st "github.com/qasemt/stockwork"
 )
 
 var appIniStr = "app init"

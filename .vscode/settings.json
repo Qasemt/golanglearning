@@ -1,32 +1,21 @@
-{ 
-   "files.exclude": {
-  "**/.git": true,
-  "**/.svn": true,
-  "**/.hg": true,
-  "**/CVS": true,
-  "**/.DS_Store": true,
-  "__debug_bin": true,
-  "vendor/": true,
-  "go.sum": true
-},
-    "go.lintOnSave": "off",
-    "go.lintTool": "gometalinter",
-    "go.useLanguageServer": true,
-    "go.docsTool": "gogetdoc",
+{
     "go.autocompleteUnimportedPackages": true,
-
- 
-    //"go.inferGopath": true,
-    "go.toolsEnvVars": {
-       // "GO111MODULE": "on",
-      //  "GOFLAGS": "-mod=vendor"
+    "go.useLanguageServer": true,
+    "[go]": {
+        "editor.snippetSuggestions": "none",
+        "editor.formatOnSave": true,
+        "editor.codeActionsOnSave": {
+            "source.organizeImports": true
+        }
     },
-"go.lintFlags": [
-//	"--exclude=\"\bexported \\w+ (\\S*['.]*)([a-zA-Z'.*]*) should have comment or be unexported\b\""
-],
-"[go]": {
-  "editor.formatOnSave": false
-},
-"go.testTimeout": "60s",
-"go.formatTool": "gofmt"
+  //  "go.inferGopath":false,
+    "gopls": {
+        "usePlaceholders": true // add parameter placeholders when completing a function
+    },
+    "files.eol": "\n", // formatting only supports LF line endings    
+    "go.toolsEnvVars": {
+        "GO111MODULE": "on",
+        
+      //  "GOPROXY": "socks5://127.0.0.1:9150"
+    },
 }

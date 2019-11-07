@@ -8,7 +8,7 @@ import (
 	"strconv"
 	"time"
 
-	"../helper"
+	"github.com/qasemt/helper"
 )
 
 type ETimeFrame int
