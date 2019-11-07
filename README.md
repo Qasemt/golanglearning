@@ -1,16 +1,20 @@
 # golanglearning
 go language learning with vs code
 
-# build exe 
+# build exe
 ```
 go build -o t.exe -ldflags "-s -w"
 ```
-# install package 
+# install package
 ```
 go get -u github.com/sirupsen/logrus
 ```
-# src 
+# src
 ```
-vs code config
+#vs code config
 https://www.youtube.com/watch?v=NphW8lvJ_fg
+```
+#create module
+```
+https://dev.to/prassee/intro-to-modules-on-go-part-1-1k77
 ```

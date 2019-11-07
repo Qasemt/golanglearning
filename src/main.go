@@ -19,6 +19,7 @@ func runCoin() error {
 	if err != nil {
 		return err
 	}
+
 	var begin time.Time
 	var end time.Time
 	end = (time.Now())
@@ -99,4 +100,6 @@ func main() {
 	if e != nil {
 		fmt.Println("Failed :( please try again \n", e)
 	}
+	fmt.Println("finished :)")
+
 }
