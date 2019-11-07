@@ -63,9 +63,12 @@ func TimeToString(t time.Time, format string) string {
 	} else if format == "yyyy" {
 		formatted = fmt.Sprintf("%4d",
 			t.Year())
-	} else {
+	} else if format == "yyyy-mm-dd" {
 		formatted = fmt.Sprintf("%4d-%02d-%02d",
 			t.Year(), t.Month(), t.Day())
+	} else {
+		formatted = fmt.Sprintf("%4d-%02d-%02d %02d:%02d:%02d",
+			t.Year(), t.Month(), t.Day(), t.Hour(), t.Minute(), t.Second())
 	}
 	return formatted
 }
@@ -89,7 +92,7 @@ func UnixTimeStrToTimeFormat(millis string, is_date bool) string {
 	t := UnixTimeToTime(gg)
 	var formatted string
 	if is_date {
-		fmt.Println(t, t.Year())
+
 		formatted = fmt.Sprintf("%4d%2d%2d",
 			t.Year(), t.Month(), t.Day())
 	} else {
@@ -123,7 +126,7 @@ func ToINT64(v string) int64 {
 
 func GetJson(url_path string, target_object_json interface{}) error {
 	//https://github.com/binance-exchange/go-binance/blob/1af034307da53bf592566c5c8a90856ddb5b34a4/util.go#L49
-	//fmt.Println(url_path)
+	fmt.Println(url_path)
 	var myClient *http.Client
 	if GetProxy() != "" {
 		if is_Socks {

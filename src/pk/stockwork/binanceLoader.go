@@ -64,7 +64,7 @@ func int64FromString(raw interface{}) (int64, error) {
 	if !ok {
 		return 0, nil
 	}
-	println(str)
+
 	n, err := strconv.ParseInt(str, 10, 64)
 	if err != nil {
 		return 0, nil
@@ -216,7 +216,11 @@ func GetAssetCreateLastCandel(asset_name string, end time.Time, timeframe ETimeF
 	if err != nil {
 		return err
 	}
-
+	if len(rawKlines) == 0 {
+		e := fmt.Errorf("GetAssetCreateLastCandel:last candel faield asset -> %v time frame :%v", asset_name, timeframe)
+		return e
+	}
+	fmt.Println(":::", asset_name, timeframe, helper.TimeToString(item.Begin, ""), helper.TimeToString(item.End, ""), len(rawKlines))
 	for _, k := range rawKlines {
 		var v helper.StockItem
 		time1, _ := timeFromUnixTimestampFloat(k[0])

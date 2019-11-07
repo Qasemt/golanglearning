@@ -25,7 +25,7 @@ func runCoin() error {
 	//:::::::::::::::::::::::::::::::::::::::: CRYPTO minute
 	//f := time.Minute * -30
 	//begin = (end.Add(f))
-	fmt.Println(begin, end)
+
 	now1 := time.Now()
 	e1 := st.GetAssetCreateLastCandel("BTCUSDT", now1, st.M15)
 	if e1 != nil {
