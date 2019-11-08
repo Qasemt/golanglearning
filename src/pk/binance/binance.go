@@ -1,4 +1,4 @@
-package stockwork
+package binance
 
 import (
 	"errors"

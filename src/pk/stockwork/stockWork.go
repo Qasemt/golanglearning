@@ -3,6 +3,7 @@ package stockwork
 import (
 	"encoding/csv"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -23,16 +24,6 @@ var path_src_dir string = ""
 var path_dst_dir string = ""
 var log = logrus.New()
 
-func toInt(s string) int64 {
-
-	f, e := strconv.ParseInt(s, 10, 64)
-
-	if e != nil {
-		return -1
-	}
-
-	return f
-}
 func CastInt(s string) string {
 
 	f, e := strconv.ParseFloat(s, 64)
@@ -203,7 +194,7 @@ func logInit() {
 	}).Info("Application Initializing")
 }
 
-func RUNStock(src_dir string, dst_dir string, is_adj bool) {
+func RUNStock(src_dir string, dst_dir string, is_adj bool) error {
 
 	path_src_dir = src_dir
 	path_dst_dir = dst_dir
@@ -214,21 +205,26 @@ func RUNStock(src_dir string, dst_dir string, is_adj bool) {
 	}
 	//::::::::::::::::::::::::::::  requirement ::::::::::::::::::::::::::::
 	if _, err := os.Stat(path_watch_list); os.IsNotExist(err) {
-
-		log.Errorf("file not exist :[ %v ]\n", path_watch_list)
-		return
+		s := fmt.Sprintf("file not exist :[ %v ]\n", path_watch_list)
+		log.Errorf(s)
+		return errors.New(s)
 	}
 
 	if _, err := os.Stat(path_src_dir); os.IsNotExist(err) {
+		s := fmt.Sprintf("dir not exist :[ %v ]\n", path_src_dir)
+		log.Errorf(s)
+		return errors.New(s)
 
-		log.Errorf("dir not exist :[ %v ]\n", path_src_dir)
-		return
 	}
 
 	var stockList watchListItems
 
-	readJsonWatchList(&stockList)
-
+	res := readJsonWatchList(&stockList)
+	if !res {
+		s := fmt.Sprintf("can not read watchList")
+		log.Errorf(s)
+		return errors.New(s)
+	}
 	var f_dst string
 	var f_src string
 	for _, g := range stockList.Qlist {
@@ -274,7 +270,9 @@ func RUNStock(src_dir string, dst_dir string, is_adj bool) {
 		var err = csvExport(list, f_dst)
 
 		if err != nil {
-			log.Printf("export failed [%v]\n", f_dst)
+			s := fmt.Sprintf("export failed [%v]\n", f_dst)
+			log.Errorf(s)
+			return errors.New(s)
 		} else {
 
 			log.WithFields(logrus.Fields{
@@ -283,7 +281,7 @@ func RUNStock(src_dir string, dst_dir string, is_adj bool) {
 		}
 
 	}
-	log.Info("finished >>>")
+	return nil
 
 }
 
