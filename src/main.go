@@ -156,6 +156,7 @@ func commands(a []string ) error {
 }
 func main() {
  e :=commands(os.Args[1:])
+ 
  if e!=nil{
  	fmt.Printf(e.Error())
 	 return

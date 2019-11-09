@@ -14,8 +14,7 @@ import (
 	"strings"
 	"time"
 
-	socks "h12.io/socks"
-
+	socks "github.com/samuel/go-socks/socks"
 )
 
 var url_proxy string
@@ -133,8 +132,6 @@ func ToINT64(v string) int64 {
 	return res
 }
 
-
-
 func GetJson(url_path string, target_object_json interface{}) error {
 	//https://github.com/binance-exchange/go-binance/blob/1af034307da53bf592566c5c8a90856ddb5b34a4/util.go#L49
 	fmt.Println(url_path)
@@ -142,7 +139,7 @@ func GetJson(url_path string, target_object_json interface{}) error {
 	if GetProxy() != "" {
 
 		if myClient == nil {
-			if is_Socks {
+			if !is_Socks {
 				fixedURL, err := url.Parse(GetProxy())
 				if err != nil {
 					fmt.Println("Malformed URL: ", err.Error())
@@ -152,8 +149,10 @@ func GetJson(url_path string, target_object_json interface{}) error {
 
 				myClient = &http.Client{Timeout: 30 * time.Second, Transport: transport}
 			} else {
-				dialSocksProxy := socks.Dial("socks5://" + GetProxy() + "?timeout=60s")
-				tr := &http.Transport{Dial: dialSocksProxy}
+				proxy := &socks.Proxy{GetProxy(), "", ""}
+				tr := &http.Transport{
+					Dial: proxy.Dial,
+				}
 
 				// dialSocksProxy, err := proxy.SOCKS5("tcp", GetProxy(), nil, proxy.Direct)
 				// if err != nil {
@@ -180,20 +179,18 @@ func GetJson(url_path string, target_object_json interface{}) error {
 		return err
 	}
 
-
 	json.Unmarshal(body, &target_object_json)
 	//fmt.Printf("body len : %v\n %v\n", len(body), string(body))
 	return err
 	//return json.NewDecoder(r.Body).Decode(target)
 }
 
-
 func OutToCSVFile(items []StockItem, dir_path string, dst_file_csv string, is_add_header bool) bool {
 
 	if _, err := os.Stat(dir_path); os.IsNotExist(err) {
 		os.MkdirAll(dir_path, os.ModePerm)
 	}
-	if dst_file_csv== "" {
+	if dst_file_csv == "" {
 		fmt.Println("OutToCSVFile", "dest file name is empty :(")
 		return false
 	}
@@ -261,21 +258,21 @@ func OutToCSVFile(items []StockItem, dir_path string, dst_file_csv string, is_ad
 	return true
 
 }
+
 func AppendToCSVFile(items []StockItem, dst_file_csv string, is_add_header bool) bool {
 
-
-	if dst_file_csv== "" {
+	if dst_file_csv == "" {
 		fmt.Println("AppendToCSVFile", "dest file name is empty :(")
 		return false
 	}
-	if  !IsExist(dst_file_csv) {
-		fmt.Println("file not found ",dst_file_csv)
+	if !IsExist(dst_file_csv) {
+		fmt.Println("file not found ", dst_file_csv)
 		return false
 	}
 
 	//:::::::::::::::::::::::::::::::::::::
 
-	fmain, err := os.OpenFile(dst_file_csv, os.O_APPEND|os.O_WRONLY,0644)
+	fmain, err := os.OpenFile(dst_file_csv, os.O_APPEND|os.O_WRONLY, 0644)
 	if err != nil {
 		return false
 	}
@@ -283,9 +280,6 @@ func AppendToCSVFile(items []StockItem, dst_file_csv string, is_add_header bool)
 	writer.UseCRLF = true
 	defer fmain.Close()
 	defer writer.Flush()
-
-
-
 
 	if is_add_header {
 		header1 := make([]string, 8)
@@ -417,30 +411,27 @@ func JoinCSVFiles(dir_path string, dst_file_csv_list []string, out_final_file st
 	return true
 
 }
-func JoinTwoCSVFiles(mainFilePath string,secondFilePath string) bool {
+func JoinTwoCSVFiles(mainFilePath string, secondFilePath string) bool {
 
-	if  !IsExist(mainFilePath) {
-		fmt.Println("file not found ",mainFilePath)
+	if !IsExist(mainFilePath) {
+		fmt.Println("file not found ", mainFilePath)
 		return false
 	}
-	if  !IsExist(secondFilePath) {
-		fmt.Println("file not found ",secondFilePath)
+	if !IsExist(secondFilePath) {
+		fmt.Println("file not found ", secondFilePath)
 		return false
 	}
 
 	fread, _ := os.Open(secondFilePath)
 	//-----------------
-	fmain, err := os.OpenFile(mainFilePath, os.O_APPEND|os.O_WRONLY,0644)
+	fmain, err := os.OpenFile(mainFilePath, os.O_APPEND|os.O_WRONLY, 0644)
 	if err != nil {
 		panic(err)
 	}
 
-
-
 	// Create a new reader.
 	r1 := csv.NewReader(fread)
 	defer fread.Close()
-
 
 	writer := csv.NewWriter(fmain)
 	writer.UseCRLF = true
@@ -463,18 +454,18 @@ func JoinTwoCSVFiles(mainFilePath string,secondFilePath string) bool {
 	}
 	return true
 }
-func GetJsonToArry(mainFilePath string) (bool,[][]string) {
+func GetJsonToArry(mainFilePath string) (bool, [][]string) {
 
-	if  !IsExist(mainFilePath) {
-		fmt.Println("file not found ",mainFilePath)
-		return false,nil
+	if !IsExist(mainFilePath) {
+		fmt.Println("file not found ", mainFilePath)
+		return false, nil
 	}
 	var list [][]string
 
 	fread, err := os.Open(mainFilePath)
 
 	if err != nil {
-		return false,nil
+		return false, nil
 	}
 	// Create a new reader.
 	r1 := csv.NewReader(fread)
@@ -486,10 +477,10 @@ func GetJsonToArry(mainFilePath string) (bool,[][]string) {
 			break
 		}
 		if err != nil {
-			return false,nil
+			return false, nil
 		}
-		list=append(list,record)
+		list = append(list, record)
 
 	}
-	return true,list
+	return true, list
 }

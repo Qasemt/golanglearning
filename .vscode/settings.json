@@ -1,11 +1,13 @@
 {
     "go.autocompleteUnimportedPackages": true,
     "go.useLanguageServer": true,
+    "go.formatTool": "goimports",
     "[go]": {
         "editor.snippetSuggestions": "none",
         "editor.formatOnSave": true,
         "editor.codeActionsOnSave": {
             "source.organizeImports": true
+            
         }
     },
   //  "go.inferGopath":false,

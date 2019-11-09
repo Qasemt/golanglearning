@@ -1,4 +1,3 @@
-
 package helper
 
 import (
@@ -18,6 +17,7 @@ type StockItem struct {
 
 	BV float64
 }
+
 //:::::::::::::::::::::::::::::
 type ETimeFrame int
 
@@ -29,12 +29,14 @@ const (
 	H4  ETimeFrame = 5
 	D1  ETimeFrame = 6
 )
+
 type TimeRange struct {
 	File_name string
 	Begin     time.Time
 	End       time.Time
 }
-func (e  ETimeFrame) String() string {
+
+func (e ETimeFrame) String() string {
 	switch e {
 	case M1:
 		return "1m"
@@ -53,4 +55,5 @@ func (e  ETimeFrame) String() string {
 		return fmt.Sprintf("%d", int(e))
 	}
 }
+
 //:::::::::::::::::::::::::::::

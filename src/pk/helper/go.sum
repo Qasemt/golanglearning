@@ -7,5 +7,4 @@ github.com/sirupsen/logrus v1.4.2/go.mod h1:tLMulIdttU9McNUspp0xgXVQah82FyeX6Mwd
 github.com/stretchr/objx v0.1.1/go.mod h1:HFkY916IF+rwdDfMAkV7OtwuqBVzrE8GR6GFx+wExME=
 github.com/stretchr/testify v1.2.2/go.mod h1:a8OnRcib4nhh0OaRAV+Yts87kKdq0PP7pXfy6kDkUVs=
 golang.org/x/sys v0.0.0-20190422165155-953cdadca894/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
-h12.io/socks v1.0.0 h1:oiFI7YXv4h/0kBNcmAb5EkkoFJgYsOF88EQjMBxjitc=
-h12.io/socks v1.0.0/go.mod h1:MdYbo5/eB9ka7u5dzW2Qh0iSyJENwB3KI5H5ngenFGA=
+
