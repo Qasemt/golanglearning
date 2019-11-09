@@ -16,8 +16,6 @@ require (
 	github.com/stripe/safesql v0.2.0 // indirect
 	golang.org/x/tools v0.0.0-20191107010934-f79515f33823 // indirect
 	gopkg.in/natefinch/lumberjack.v2 v2.0.0 // indirect
-	h12.io/socks v1.0.0 // indirect
-
 	honnef.co/go/tools v0.0.1-2019.2.3 // indirect
 	mvdan.cc/unparam v0.0.0-20190917161559-b83a221c10a2 // indirect
 )
