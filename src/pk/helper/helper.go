@@ -37,7 +37,7 @@ func GetProxy() string {
 	return url_proxy
 }
 func UnixMilli(t time.Time) int64 {
-	return t.Round(time.Millisecond).UnixNano() / (int64(time.Millisecond) / int64(time.Nanosecond))
+		return t.Round(time.Millisecond).UnixNano() / (int64(time.Millisecond) / int64(time.Nanosecond))
 }
 
 func UnixTimeToTime(millis int64) time.Time {
@@ -161,10 +161,10 @@ func GetJson(url_path string, target_object_json interface{}) error {
 				// tr := &http.Transport{Dial: dialSocksProxy.Dial}
 				myClient = &http.Client{Timeout: 30 * time.Second, Transport: tr}
 			}
-		} else {
-			myClient = &http.Client{Timeout: 60 * time.Second}
 		}
 
+	}else {
+		myClient = &http.Client{Timeout: 60 * time.Second}
 	}
 
 	r, err := myClient.Get(url_path)

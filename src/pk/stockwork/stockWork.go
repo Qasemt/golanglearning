@@ -284,7 +284,7 @@ func RUNStock(src_dir string, dst_dir string, is_adj bool) error {
 	return nil
 
 }
-
+// stoock forex
 func ConvertStoockTODT7(src_file_csv string, dst_file_csv string) {
 
 	var final_out = dst_file_csv

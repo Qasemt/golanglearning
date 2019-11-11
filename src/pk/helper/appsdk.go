@@ -17,6 +17,15 @@ type StockItem struct {
 
 	BV float64
 }
+type StockFromWebService struct {
+	AssetId string  `json:"asset_id"`
+	Time    float64  `json:"time"`
+	O       float64 `json:"open"`
+	H       float64 `json:"high"`
+	L       float64 `json:"low"`
+	C       float64 `json:"close"`
+	V       float64`json:"volume"`
+}
 
 //:::::::::::::::::::::::::::::
 type ETimeFrame int

@@ -3,11 +3,11 @@ package main
 import (
 	"errors"
 	"fmt"
+	av "github.com/qasemt/avardstock"
 	b "github.com/qasemt/binance"
 	h "github.com/qasemt/helper"
 	st "github.com/qasemt/stockwork"
 	"os"
-
 	"time"
 )
 
@@ -16,10 +16,10 @@ var appIniStr = "app init"
 func init() {
 	fmt.Printf(appIniStr + "\n")
 	//err := h.SetProxy("socks5://127.0.0.1:9150", true)
-	err := h.SetProxy("socks5://127.0.0.1:10028", true) // psiphon
-	if err != nil {
-		return
-	}
+	//err := h.SetProxy("socks5://127.0.0.1:10028", true) // psiphon
+	//if err != nil {
+	//	return
+	//}
 }
 func runCoin(asset string) error {
 	//:::::::::::::::::::::::::::::::::::::::: CRYPTO
@@ -120,6 +120,9 @@ func binanceV2(){
 	fmt.Println(s)
 
 }
+func avard()  {
+	av.Make("fff", -time.Duration(time.Hour* 24*10), time.Now(),h.D1)
+}
 func commands(a []string ) error {
 	if len(a) ==2 &&  a[0]=="crypto" && a[1] =="BTCUSDT" {
 		e := runCoin(a[1])
@@ -155,6 +158,7 @@ func commands(a []string ) error {
 	return nil
 }
 func main() {
+	avard()
  e :=commands(os.Args[1:])
  
  if e!=nil{
