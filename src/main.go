@@ -3,12 +3,13 @@ package main
 import (
 	"errors"
 	"fmt"
+	"os"
+	"time"
+
 	av "github.com/qasemt/avardstock"
 	b "github.com/qasemt/binance"
 	h "github.com/qasemt/helper"
 	st "github.com/qasemt/stockwork"
-	"os"
-	"time"
 )
 
 var appIniStr = "app init"
@@ -24,7 +25,6 @@ func init() {
 func runCoin(asset string) error {
 	//:::::::::::::::::::::::::::::::::::::::: CRYPTO
 
-
 	var begin time.Time
 	var end time.Time
 	end = (time.Now())
@@ -33,7 +33,7 @@ func runCoin(asset string) error {
 	//begin = (end.Add(f))
 
 	now1 := time.Now()
-	e1 := st.GetAssetCreateLastCandel(asset, now1,h.M15)
+	e1 := st.GetAssetCreateLastCandel(asset, now1, h.M15)
 	if e1 != nil {
 		return e1
 	}
@@ -111,82 +111,84 @@ func doingLoadCoinWithTime() (bool, error) {
 	}
 
 }
-func binanceV2(){
-	f:=b.MakeCacheHourly("BTCUSDT",h.M15,h.H1,time.Duration(time.Hour* 24*1), time.Now())
+func binanceV2() {
+	f := b.MakeCacheHourly("BTCUSDT", h.M15, h.H1, time.Duration(time.Hour*24*1), time.Now())
 	fmt.Println(f)
 
-	s := b.MakeCacheBase15M("BTCUSDT", time.Duration(time.Hour* 24*10), time.Now())
+	s := b.MakeCacheBase15M("BTCUSDT", time.Duration(time.Hour*24*10), time.Now())
 
 	fmt.Println(s)
 
 }
-func avard()  {
-	av.Make("fff", -time.Duration(time.Hour* 24*10), time.Now(),h.D1)
-}
-func commands(a []string ) error {
-	if len(a) ==2 &&  a[0]=="crypto" && a[1] =="BTCUSDT" {
-		e := runCoin(a[1])
-		if e != nil {
-			return e
-		}
-	}else if len(a) ==2 &&  a[0]=="tehran"   {
-		if len(a[1]) ==0{
-			return  errors.New(fmt.Sprintln("path src is empty"))
-		}
-		if len(a[2]) ==0{
-			return  errors.New(fmt.Sprintln("path dest is empty"))
-		}
-		if len(a[3]) !=0 && a[3]!= "adj"{
-			return  errors.New(fmt.Sprintln("arg 3 not valid"))
-		}
-
-		if a[3]=="" {
-		e:=	st.RUNStock(a[1], a[2], false)
-		if e!=nil {
-			return e
-		}
-		}else{
-			e:=	st.RUNStock(a[1], a[2], true)
-			if e!=nil{
-				return e
-			}
-		}
-	}else {
-		s := fmt.Sprintf("Help args : [crypto] [BTCUSDT]\nHelp args : [tehran] [src dir path ] [dst dir path]")
-		return errors.New(s)
-	}
-	return nil
-}
-func main() {
-	avard()
- e :=commands(os.Args[1:])
- 
- if e!=nil{
- 	fmt.Printf(e.Error())
-	 return
- }
-	//:::::::::::::::::::::::::::::::::::::::: CRYPTO
-	/*_, e := doingLoadCoinWithTime()
-	if e != nil {
-		fmt.Println("Failed :( please try again \n", e)
-	}*/
-
-	//argsWithoutProg := os.Args[1:]
-
+func testFunction() {
 	//testFunctions.RunTest()
 	//testFunctions.RunTestInterface()
 	//	testFunctions.RunTestGoRoot()
 	//testFunctions.RunTestMutex()
 	//	testFunctions.RunTestCSV()
 
+	//testFunctions.TestRegex()
+
+}
+
+//:::::::::::::::::::::::::::::::::::::::: FOREX
+func forex() {
+	//stockwork.ConvertStoockTODT7("D:/workspace/stock/data/forex/ff.csv", "D:/workspace/stock/data/forex/ff11.csv")
+}
+
+//:::::::::::::::::::::::::::::::::::::::: CONVERT STOCK TEHRAN FROM TSE
+func tehranTSEC() {
 	//var path_dst_dir string = "D:/workspace/stock/tseclient/tmp/"
 	//stockwork.RUNStock("D:/workspace/stock/tseclient/normal/", "D:/out/", false)
 	//stockwork.RUNStock("D:/workspace/stock/tseclient/Adjusted/", "D:/out2/", true)
-	//testFunctions.TestRegex()
+}
+func avard() {
+	av.Make("fff", -time.Duration(time.Hour*24*10), time.Now(), h.D1)
+}
 
-	//:::::::::::::::::::::::::::::::::::::::: FOREX
-	//stockwork.ConvertStoockTODT7("D:/workspace/stock/data/forex/ff.csv", "D:/workspace/stock/data/forex/ff11.csv")
-	//	e := runCoin()
+func commands(a []string) error {
+	if len(a) == 2 && a[0] == "crypto" && a[1] == "BTCUSDT" {
+		e := runCoin(a[1])
+		if e != nil {
+			return e
+		}
+	} else if len(a) == 2 && a[0] == "tehran" {
+		if len(a[1]) == 0 {
+			return errors.New(fmt.Sprintln("path src is empty"))
+		}
+		if len(a[2]) == 0 {
+			return errors.New(fmt.Sprintln("path dest is empty"))
+		}
+		if len(a[3]) != 0 && a[3] != "adj" {
+			return errors.New(fmt.Sprintln("arg 3 not valid"))
+		}
+
+		if a[3] == "" {
+			e := st.RUNStock(a[1], a[2], false)
+			if e != nil {
+				return e
+			}
+		} else {
+			e := st.RUNStock(a[1], a[2], true)
+			if e != nil {
+				return e
+			}
+		}
+	} else {
+		s := fmt.Sprintf("Help args : [crypto] [BTCUSDT]\nHelp args : [tehran] [src dir path ] [dst dir path]")
+		return errors.New(s)
+	}
+	return nil
+}
+
+func main() {
+	avard()
+	e := commands(os.Args[1:])
+
+	if e != nil {
+		fmt.Printf(e.Error())
+		return
+	}
 
 	fmt.Println("finished :)")
 
