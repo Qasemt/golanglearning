@@ -143,8 +143,9 @@ func tehranTSEC() {
 	//stockwork.RUNStock("D:/workspace/stock/tseclient/Adjusted/", "D:/out2/", true)
 }
 func avard() {
-	av.DatabaseInit();
-	av.Make("fff", -time.Duration(time.Hour*24*10), time.Now(), h.D1)
+	av.DatabaseInit()
+	//av.Make("IRO1GDIR0001", -time.Duration(time.Hour*24*10), time.Now(), h.D1)
+	av.Make("IRO1GDIR0001", -time.Duration(time.Hour*27), time.Now(), h.H1)
 }
 
 func commands(a []string) error {

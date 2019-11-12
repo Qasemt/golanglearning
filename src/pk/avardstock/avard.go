@@ -4,8 +4,6 @@ import (
 	"errors"
 	"fmt"
 	. "github.com/qasemt/helper"
-
-
 	"os"
 	"path"
 	"strconv"
@@ -14,13 +12,19 @@ import (
 
 var cachePath = "d:/cache2/tehran/"
 
-func getDateRange(duration time.Duration, end time.Time,frame ETimeFrame ) []TimeRange {
+func getDateRange(duration time.Duration, end time.Time, frame ETimeFrame) []TimeRange {
 	day_rang := []TimeRange{}
 	start := end.Add(duration)
 	var diff time.Duration
-	if frame ==D1 {
-		diff = end.Sub(start) /  ((24 * time.Hour)*360)
-		diff=diff+1
+	if frame == D1 {
+		diff = end.Sub(start) / ((24 * time.Hour) * 360)
+		diff = diff + 1
+	}else  if frame == H1 {
+		diff = end.Sub(start) / (24 * time.Hour)
+		diff = diff + 1
+	}else  if frame == H4 {
+		diff = end.Sub(start) / (24 * time.Hour)
+		diff = diff + 1
 	}
 	for i := 1; i <= int(diff); i++ {
 		var tt = start.AddDate(0, 0, i)
@@ -29,10 +33,10 @@ func getDateRange(duration time.Duration, end time.Time,frame ETimeFrame ) []Tim
 		y, m, d := tt.Date()
 
 		if frame == D1 {
-			d1.File_name =	 fmt.Sprintf("%4d%02d%02d",tt.Year(), 1, 1)+ ".csv"
-			d1.Begin = time.Date(y, 1,1, 0, 0, 0, 0, tt.Location())
-			d1.End = time.Date(y, 12,31, 23, 59, 59, int(time.Second-time.Nanosecond), tt.Location())
-		}else {
+			d1.File_name = fmt.Sprintf("%4d%02d%02d", tt.Year(), 1, 1) + ".csv"
+			d1.Begin = time.Date(y, 1, 1, 0, 0, 0, 0, tt.Location())
+			d1.End = time.Date(y, 12, 31, 23, 59, 59, int(time.Second-time.Nanosecond), tt.Location())
+		} else {
 			d1.File_name = TimeToString(tt, "yyyymmdd") + ".csv"
 			d1.Begin = time.Date(y, m, d, 0, 0, 0, 0, tt.Location())
 			d1.End = time.Date(y, m, d, 23, 59, 59, int(time.Second-time.Nanosecond), tt.Location())
@@ -48,19 +52,36 @@ func downloadAsset(assetName string, item TimeRange, timefram ETimeFrame) ([]Sto
 	var itemsFinal []StockItem
 	startStr := strconv.FormatInt(item.Begin.Unix(), 10)
 	endStr := strconv.FormatInt(item.End.Unix(), 10)
-
-	err := GetJson("https://rahavard365.com/api/chart/bars?ticker=exchange.asset%3A66%3Areal_close%3Atype1&resolution=d&startDateTime="+startStr+"&endDateTime="+endStr+"&firstDataRequest=true", &_rawKlines)
+var frame string
+	if timefram == D1{
+		frame ="D"
+	}else if timefram == M15{
+		frame ="m15"
+	} else if timefram == H1 {
+		frame ="h1"
+	} else if timefram == H4 {
+		frame ="h4"
+	}
+	err := GetJson("https://rahavard365.com/api/chart/bars?ticker=exchange.asset%3A66%3Areal_close%3Atype1&resolution="+frame+"&startDateTime="+startStr+"&endDateTime="+endStr+"&firstDataRequest=true", &_rawKlines)
 
 	if err != nil {
 		return nil, err
 	}
+
 	if _rawKlines == nil {
 		return nil, errors.New("downloadAsset failed ... binance block link")
 	}
+	db, er := DatabaseInit()
+	if er != nil {
+		return nil, er
+	}
+	defer db.Close()
+
+	InsertStocks(_rawKlines, assetName,timefram, db)
 
 	for _, k := range _rawKlines {
 		var v StockItem
-		time1 :=time.Unix(0, int64(k.Time) * int64(time.Millisecond))
+		time1 := time.Unix(0, int64(k.Time)*int64(time.Millisecond))
 		v.D = UnixTimeStrToFormatDT(time1, true)
 		v.T = UnixTimeStrToFormatDT(time1, false)
 
@@ -81,14 +102,14 @@ func downloadAsset(assetName string, item TimeRange, timefram ETimeFrame) ([]Sto
 	return itemsFinal, nil
 }
 
-func Make(assetName string, duration time.Duration, end time.Time, timefram ETimeFrame)   error {
+func Make(assetName string, duration time.Duration, end time.Time, timefram ETimeFrame) error {
 
-	dayRang := getDateRange(duration, end,timefram)
+	dayRang := getDateRange(duration, end, timefram)
 
 	for i := 0; i < len(dayRang); i++ {
 		it := dayRang[i]
 		fmt.Println(it)
-		file_path:= path.Join(cachePath, assetName, (timefram).String(), it.File_name)
+		file_path := path.Join(cachePath, assetName, (timefram).String(), it.File_name)
 		if IsExist(file_path) && it.Begin.Year() == time.Now().Year() && it.Begin.Month() == time.Now().Month() && it.Begin.Day() == time.Now().Day() {
 			var err = os.Remove(file_path)
 			if err != nil {
@@ -101,10 +122,10 @@ func Make(assetName string, duration time.Duration, end time.Time, timefram ETim
 			continue
 		}
 
-		_, e := downloadAsset(assetName,it,timefram)
+		_, e := downloadAsset(assetName, it, timefram)
 		if e != nil {
 			return e
 		}
 	}
-	return  nil
+	return nil
 }
