@@ -23,12 +23,12 @@ type StockItem struct {
 type ETimeFrame int
 
 const (
-	M1  ETimeFrame = 1
-	M15 ETimeFrame = 2
-	H1  ETimeFrame = 3
-	H2  ETimeFrame = 4
-	H4  ETimeFrame = 5
-	D1  ETimeFrame = 6
+	M1 ETimeFrame = 1
+	M15 ETimeFrame = 15
+	H1  ETimeFrame = 60
+	H2  ETimeFrame = 120
+	H4  ETimeFrame = 240
+	D1  ETimeFrame = 1440
 )
 
 type TimeRange struct {

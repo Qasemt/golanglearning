@@ -39,10 +39,10 @@ func DatabaseInit() (*gorm.DB, error) {
 	// Migrate the schema
 	db.AutoMigrate(&Nemad{})
 	db.AutoMigrate(&StockFromWebService{})
-	db.Delete(&StockFromWebService{}, "")
+	//db.Delete(&StockFromWebService{}, "")
 	return db, nil
 }
-func InsertStocks(stockList []StockFromWebService, assetid string, timeframe h.ETimeFrame, db *gorm.DB) (bool, error) {
+func InsertStocks(stockList []StockFromWebService, assetid string, timeframe h.ETimeFrame, db *gorm.DB) (error) {
 	var err error
 	db, err = gorm.Open("sqlite3", "./stock.db")
 	if err != nil {
@@ -55,7 +55,12 @@ func InsertStocks(stockList []StockFromWebService, assetid string, timeframe h.E
 		t.TimeFrame = int(timeframe)
 		//	if db.NewRecord(t) {
 		db.Create(&t)
+		/*f:=db.GetErrors()
+		if len(f)>0	{
+			fmt.Println(f)
+		}*/
+
 		//	}
 	}
-	return true, nil
+	return  nil
 }

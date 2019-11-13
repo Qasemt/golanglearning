@@ -144,8 +144,11 @@ func tehranTSEC() {
 }
 func avard() {
 	av.DatabaseInit()
-	//av.Make("IRO1GDIR0001", -time.Duration(time.Hour*24*10), time.Now(), h.D1)
-	av.Make("IRO1GDIR0001", -time.Duration(time.Hour*27), time.Now(), h.H1)
+
+	av.Make("IRO1GDIR0001", -time.Duration(time.Hour*24*200), time.Now(), h.H1)
+	av.Make("IRO1GDIR0001", -time.Duration(time.Hour*24*200), time.Now(), h.H2)
+	av.Make("IRO1GDIR0001", -time.Duration(time.Hour*24*300), time.Now(), h.H4)
+	av.Make("IRO1GDIR0001", -time.Duration(time.Hour*24*600), time.Now(), h.D1)
 }
 
 func commands(a []string) error {
