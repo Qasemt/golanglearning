@@ -76,11 +76,11 @@ func GetDateRange(duration time.Duration, end time.Time) []TimeRange {
 func DownloadAsset(assetName string, item TimeRange, timefram ETimeFrame) ([]StockItem, error) {
 	var _rawKlines = [][]interface{}{}
 	fmt.Println(item)
-	cacheFolderPath := path.Join(cachePath, assetName, (timefram).String())
+	cacheFolderPath := path.Join(cachePath, assetName, (timefram).ToString())
 	var itemsFinal []StockItem
 	startStr := strconv.FormatInt(UnixMilli(item.Begin), 10)
 	endStr := strconv.FormatInt(UnixMilli(item.End), 10)
-	err := GetJson("https://api.binance.com/api/v3/klines?symbol="+assetName+"&interval="+timefram.String()+"&startTime="+startStr+"&endTime="+endStr, &_rawKlines)
+	err := GetJson("https://api.binance.com/api/v3/klines?symbol="+assetName+"&interval="+timefram.ToString()+"&startTime="+startStr+"&endTime="+endStr, &_rawKlines)
 
 	if err != nil {
 		return nil, err
@@ -130,7 +130,7 @@ func MakeCacheBase15M(assetName string, duration time.Duration, end time.Time) e
 	//::::::::::::::::::::::::::::::
 	for i := 0; i < len(dayRang); i++ {
 		it := dayRang[i]
-		file_15m := path.Join(cachePath, assetName, (M15).String(), it.File_name)
+		file_15m := path.Join(cachePath, assetName, (M15).ToString(), it.File_name)
 		//________________________________________________
 		if IsExist(file_15m) && CompareDate(time.Now(), it.Begin) {
 			last_File_date_ProcessinM15 = TimeToString(it.Begin, "yyyymmdd") + ".csv"
@@ -158,7 +158,7 @@ func MakeCacheBase15M(assetName string, duration time.Duration, end time.Time) e
 			if e != nil {
 				return e
 			}
-			filePath15 := path.Join(cachePath, assetName, (M15).String(), last_File_date_ProcessinM15)
+			filePath15 := path.Join(cachePath, assetName, (M15).ToString(), last_File_date_ProcessinM15)
 			res := makeLastCandelFromTimeFrame1M(filePath15, lastCandels1m)
 			if res != nil {
 				return errors.New("join last candel from 1m time frame to 15m file has been failed.")
@@ -196,7 +196,7 @@ func MakeCacheHourly(assetName string, baseTimeFrame ETimeFrame, totimeframe ETi
 
 	for i := 0; i < len(dayRang); i++ {
 		it := dayRang[i]
-		file_15m := path.Join(cachePath, assetName, (baseTimeFrame).String(), it.File_name)
+		file_15m := path.Join(cachePath, assetName, (baseTimeFrame).ToString(), it.File_name)
 
 		if !IsExist(file_15m) {
 			return errors.New(fmt.Sprintln("MakeCacheHourly: file not found", file_15m))

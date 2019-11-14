@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"sync"
 	"time"
 
 	av "github.com/qasemt/avardstock"
@@ -143,12 +144,28 @@ func tehranTSEC() {
 	//stockwork.RUNStock("D:/workspace/stock/tseclient/Adjusted/", "D:/out2/", true)
 }
 func avard() {
-	av.DatabaseInit()
+	//var id string ="IRO1GDIR0001"
+	var id string = "IRO1OFRS0001"
+	var code string = "sefars"
+	var lockD1 sync.Mutex
+	var lockH4 sync.Mutex
+	var lockH2 sync.Mutex
+	var lockH1 sync.Mutex
+	var wg sync.WaitGroup
+	wg.Add(8)
+	go av.Make(&wg,&lockH1,id, code, -time.Duration(time.Hour*24*150), time.Now(), h.H1, h.Adj)
+	go av.Make(&wg,&lockH1,id, code, -time.Duration(time.Hour*24*150), time.Now(), h.H1, h.Normal)
 
-	av.Make("IRO1GDIR0001", -time.Duration(time.Hour*24*200), time.Now(), h.H1)
-	av.Make("IRO1GDIR0001", -time.Duration(time.Hour*24*200), time.Now(), h.H2)
-	av.Make("IRO1GDIR0001", -time.Duration(time.Hour*24*300), time.Now(), h.H4)
-	av.Make("IRO1GDIR0001", -time.Duration(time.Hour*24*600), time.Now(), h.D1)
+	go av.Make(&wg,&lockH2,id,code, -time.Duration(time.Hour*24*200), time.Now(), h.H2, h.Adj)
+	go av.Make(&wg,&lockH2,id, code, -time.Duration(time.Hour*24*200), time.Now(), h.H2, h.Normal)
+
+	go av.Make(&wg,&lockH4,id,code, -time.Duration(time.Hour*24*360), time.Now(), h.H4, h.Adj)
+	go av.Make(&wg,&lockH4,id, code, -time.Duration(time.Hour*24*360), time.Now(), h.H4, h.Normal)
+
+	go av.Make(&wg,&lockD1,id, code, -time.Duration(time.Hour*24*2000), time.Now(), h.D1, h.Adj)
+
+	go av.Make(&wg,&lockD1,id, code, -time.Duration(time.Hour*24*2000), time.Now(), h.D1, h.Normal)
+	wg.Wait()
 }
 
 func commands(a []string) error {

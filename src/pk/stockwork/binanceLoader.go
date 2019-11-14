@@ -61,8 +61,8 @@ func GetAsset(assetName string, start time.Time, end time.Time, timeframe ETimeF
 	day_rang := []TimeRange{}
 	file_list := []string{}
 	var dir_cache_path string
-	dir_cache_path = path.Join(cachePath, assetName, timeframe.String())
-	last_candel := path.Join(cachePath, cacheLastCandel, assetName, (timeframe).String()+".csv")
+	dir_cache_path = path.Join(cachePath, assetName, timeframe.ToString())
+	last_candel := path.Join(cachePath, cacheLastCandel, assetName, (timeframe).ToString()+".csv")
 	var items_final []StockItem
 
 	//threeDays := time.Hour * 24 * 3
@@ -103,8 +103,8 @@ func GetAsset(assetName string, start time.Time, end time.Time, timeframe ETimeF
 			continue
 		}
 
-		fmt.Printf(">>> %v %v %v \n", assetName, timeframe.String(), TimeToString(item.Begin, "yyyy-mm-dd"))
-		err := GetJson("https://api.binance.com/api/v3/klines?symbol="+assetName+"&interval="+timeframe.String()+"&startTime="+start_str+"&endTime="+end_str, &rawKlines)
+		fmt.Printf(">>> %v %v %v \n", assetName, timeframe.ToString(), TimeToString(item.Begin, "yyyy-mm-dd"))
+		err := GetJson("https://api.binance.com/api/v3/klines?symbol="+assetName+"&interval="+timeframe.ToString()+"&startTime="+start_str+"&endTime="+end_str, &rawKlines)
 		if err != nil {
 			return err
 		}
@@ -155,7 +155,7 @@ func GetAssetCreateLastCandel(assetName string, end time.Time, timeframe ETimeFr
 	var items_final []StockItem
 
 	var item TimeRange
-	item.File_name = timeframe.String() + ".csv"
+	item.File_name = timeframe.ToString() + ".csv"
 	var diff time.Duration
 	if timeframe == H1 {
 		diff = time.Hour * 1
@@ -249,8 +249,8 @@ func GetAssetYear(asset_name string, start time.Time, end time.Time, timeframe E
 	day_rang := []TimeRange{}
 	file_list := []string{}
 	var dir_cache_path string
-	dir_cache_path = path.Join(cachePath, asset_name, timeframe.String())
-	last_candel := path.Join(cachePath, cacheLastCandel, asset_name, (D1).String()+".csv")
+	dir_cache_path = path.Join(cachePath, asset_name, timeframe.ToString())
+	last_candel := path.Join(cachePath, cacheLastCandel, asset_name, (D1).ToString()+".csv")
 	var items_final []StockItem
 
 	//threeDays := time.Hour * 24 * 3
@@ -288,9 +288,9 @@ func GetAssetYear(asset_name string, start time.Time, end time.Time, timeframe E
 		} else if IsExist(final_out) {
 			continue
 		}
-		fmt.Printf(">>> %v %v %v \n", asset_name, timeframe.String(), TimeToString(item.Begin, "yyyy-mm-dd"))
+		fmt.Printf(">>> %v %v %v \n", asset_name, timeframe.ToString(), TimeToString(item.Begin, "yyyy-mm-dd"))
 
-		err := GetJson("https://api.binance.com/api/v3/klines?symbol="+asset_name+"&interval="+timeframe.String()+"&startTime="+start_str+"&endTime="+end_str, &rawKlines)
+		err := GetJson("https://api.binance.com/api/v3/klines?symbol="+asset_name+"&interval="+timeframe.ToString()+"&startTime="+start_str+"&endTime="+end_str, &rawKlines)
 		if err != nil {
 			return err
 		}
