@@ -143,31 +143,56 @@ func tehranTSEC() {
 	//stockwork.RUNStock("D:/workspace/stock/tseclient/normal/", "D:/out/", false)
 	//stockwork.RUNStock("D:/workspace/stock/tseclient/Adjusted/", "D:/out2/", true)
 }
-func avard() {
+func avardAssetProcess(assetCode string, nameEn string, isIndex bool) error {
 	//var id string ="IRO1GDIR0001"
-	var id string = "IRO1OFRS0001"
-	var code string = "sefars"
+	if nameEn == "" || assetCode == "" {
+		return errors.New("field is empty ")
+	}
 	var lockD1 sync.Mutex
 	var lockH4 sync.Mutex
 	var lockH2 sync.Mutex
 	var lockH1 sync.Mutex
 	var wg sync.WaitGroup
-	wg.Add(8)
-	go av.Make(&wg,&lockH1,id, code, -time.Duration(time.Hour*24*150), time.Now(), h.H1, h.Adj)
-	go av.Make(&wg,&lockH1,id, code, -time.Duration(time.Hour*24*150), time.Now(), h.H1, h.Normal)
+	if isIndex == true {
+		wg.Add(2)
+	} else {
+		wg.Add(8)
+	}
 
-	go av.Make(&wg,&lockH2,id,code, -time.Duration(time.Hour*24*200), time.Now(), h.H2, h.Adj)
-	go av.Make(&wg,&lockH2,id, code, -time.Duration(time.Hour*24*200), time.Now(), h.H2, h.Normal)
+	go av.Make(&wg, &lockH1, assetCode, nameEn, isIndex, -time.Duration(time.Hour*24*150), time.Now(), h.H1, h.Normal)
+	go av.Make(&wg, &lockD1, assetCode, nameEn, isIndex, -time.Duration(time.Hour*24*4000), time.Now(), h.D1, h.Normal)
 
-	go av.Make(&wg,&lockH4,id,code, -time.Duration(time.Hour*24*360), time.Now(), h.H4, h.Adj)
-	go av.Make(&wg,&lockH4,id, code, -time.Duration(time.Hour*24*360), time.Now(), h.H4, h.Normal)
+	if isIndex == false {
+		go av.Make(&wg, &lockH2, assetCode, nameEn, isIndex, -time.Duration(time.Hour*24*200), time.Now(), h.H2, h.Normal)
+		go av.Make(&wg, &lockH4, assetCode, nameEn, isIndex, -time.Duration(time.Hour*24*360), time.Now(), h.H4, h.Normal)
 
-	go av.Make(&wg,&lockD1,id, code, -time.Duration(time.Hour*24*2000), time.Now(), h.D1, h.Adj)
-
-	go av.Make(&wg,&lockD1,id, code, -time.Duration(time.Hour*24*2000), time.Now(), h.D1, h.Normal)
+		go av.Make(&wg, &lockH1, assetCode, nameEn, isIndex, -time.Duration(time.Hour*24*150), time.Now(), h.H1, h.Adj)
+		go av.Make(&wg, &lockH2, assetCode, nameEn, isIndex, -time.Duration(time.Hour*24*200), time.Now(), h.H2, h.Adj)
+		go av.Make(&wg, &lockH4, assetCode, nameEn, isIndex, -time.Duration(time.Hour*24*360), time.Now(), h.H4, h.Adj)
+		go av.Make(&wg, &lockD1, assetCode, nameEn, isIndex, -time.Duration(time.Hour*24*4000), time.Now(), h.D1, h.Adj)
+	}
 	wg.Wait()
+	return nil
 }
+func avardSync() {
+	av.SyncFromTSE()
+}
+func avardMainProcess() error {
+	list, e := av.ReadJsonWatchList()
 
+	if e != nil {
+		return e
+	}
+
+	for _, g := range list {
+		e := avardAssetProcess(g.AssetCode, g.NameEn, g.IsIndex)
+		if e != nil {
+			return e
+		}
+	}
+
+	return nil
+}
 func commands(a []string) error {
 	if len(a) == 2 && a[0] == "crypto" && a[1] == "BTCUSDT" {
 		e := runCoin(a[1])
@@ -204,7 +229,8 @@ func commands(a []string) error {
 }
 
 func main() {
-	avard()
+	//avardSync()
+	avardMainProcess()
 	e := commands(os.Args[1:])
 
 	if e != nil {

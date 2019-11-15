@@ -32,7 +32,9 @@ func SetProxy(v string, is_socks bool) error {
 	is_Socks = is_socks
 	return nil
 }
-
+func GetRootCache() string{
+	return "./d/"
+}
 func GetProxy() string {
 	return url_proxy
 }
