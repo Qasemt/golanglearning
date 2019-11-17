@@ -185,14 +185,16 @@ func avardMainProcess() error {
 	}
 
 	for _, g := range list {
-		e := avardAssetProcess(g.AssetCode, g.NameEn, g.IsIndex)
-		if e != nil {
+	 	 avardAssetProcess(g.AssetCode, g.NameEn, g.IsIndex)
+	/*	if e != nil {
 			return e
-		}
+		}*/
 	}
 
 	return nil
 }
+
+//OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO
 func commands(a []string) error {
 	if len(a) == 2 && a[0] == "crypto" && a[1] == "BTCUSDT" {
 		e := runCoin(a[1])

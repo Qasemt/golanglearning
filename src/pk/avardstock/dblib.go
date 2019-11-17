@@ -84,9 +84,13 @@ func DatabaseInit(dbName1 string, timefrm string, db1 *gorm.DB) (*gorm.DB, strin
 	}
 
 	if strings.Contains(fullPath, "main.bin") {
-		db1.AutoMigrate(&Nemad{})
+		if !db1.HasTable(&Nemad{}) {
+			db1.AutoMigrate(&Nemad{})
+		}
 	} else {
-		db1.AutoMigrate(&StockFromWebService{})
+		if !db1.HasTable(&StockFromWebService{}) {
+			db1.AutoMigrate(&StockFromWebService{})
+		}
 	}
 
 	return db1, fullPath, nil

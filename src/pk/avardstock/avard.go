@@ -108,6 +108,16 @@ func GetDateRangeYears(duration time.Duration, end time.Time) []TimeRange {
 	}
 	return day_rang
 }
+func SyncDb(assetCode string, frame ETimeFrame) error {
+	var db *gorm.DB
+
+	db, _, er := DatabaseInit(assetCode, frame.ToString(), db)
+	if er != nil {
+		return er
+	}
+	db.Close()
+	return  nil
+}
 func Make(wg *sync.WaitGroup, lock *sync.Mutex, assetCode string, assetNameEn string, isIndex bool, duration time.Duration, end time.Time, timeFrame ETimeFrame, tc ETypeChart) error {
 	defer wg.Done()
 	var db *gorm.DB
@@ -126,8 +136,8 @@ func Make(wg *sync.WaitGroup, lock *sync.Mutex, assetCode string, assetNameEn st
 		V:         0,
 	}
 	var dbname string = assetCode
-	if isIndex{
-		dbname=fmt.Sprintf("%si",assetCode)
+	if isIndex {
+		dbname = fmt.Sprintf("%si", assetCode)
 	}
 	db, fullPath, er := DatabaseInit(dbname, timeFrame.ToString(), db)
 	if er != nil {
@@ -177,7 +187,7 @@ func Make(wg *sync.WaitGroup, lock *sync.Mutex, assetCode string, assetNameEn st
 		t := GetDateRangeYears(duration, end)
 		times = append(times, t...)
 	}
-	fmt.Println("->", it)
+
 	var itemsRaws []StockFromWebService
 	for _, h := range times {
 
@@ -190,7 +200,7 @@ func Make(wg *sync.WaitGroup, lock *sync.Mutex, assetCode string, assetNameEn st
 
 	//::::::::::::::::::::::::::::::::::::::::: INSERT TO DATABASE
 	{
-		println("load net : ", len(itemsRaws))
+		fmt.Println("Type",tc.ToTypeChartStr(),"asset ", assetNameEn, "time frame ", timeFrame.ToString(), "load from net : ", len(itemsRaws))
 		if len(itemsRaws) > 0 {
 			InsertStocks(db, lock1, isIndex, itemsRaws, assetCode, timeFrame, tc)
 			//if err != nil {
@@ -244,8 +254,8 @@ func Make(wg *sync.WaitGroup, lock *sync.Mutex, assetCode string, assetNameEn st
 func ReadJsonWatchList() ([]watchListItem, error) {
 	var list []watchListItem
 	watchPath := path.Join(GetRootCache(), "watchList.json")
-	if !IsExist(watchPath){
-		return  nil,errors.New(fmt.Sprintf("watch list not found : %v",watchPath))
+	if !IsExist(watchPath) {
+		return nil, errors.New(fmt.Sprintf("watch list not found : %v", watchPath))
 	}
 
 	jsonFile, err := os.Open(watchPath)

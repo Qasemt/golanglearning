@@ -136,7 +136,7 @@ func ToINT64(v string) int64 {
 
 func GetJson(url_path string, target_object_json interface{}) error {
 	//https://github.com/binance-exchange/go-binance/blob/1af034307da53bf592566c5c8a90856ddb5b34a4/util.go#L49
-	fmt.Println(url_path)
+	//fmt.Println(url_path)
 	var myClient *http.Client
 	if GetProxy() != "" {
 
