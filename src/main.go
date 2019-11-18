@@ -143,10 +143,12 @@ func tehranTSEC() {
 	//stockwork.RUNStock("D:/workspace/stock/tseclient/normal/", "D:/out/", false)
 	//stockwork.RUNStock("D:/workspace/stock/tseclient/Adjusted/", "D:/out2/", true)
 }
-func avardAssetProcess(assetCode string, nameEn string, isIndex bool) error {
+func avardAssetProcess(parentWaitGroup *sync.WaitGroup, assetCode string, nameEn string, isIndex bool) error {
 	//var id string ="IRO1GDIR0001"
 	if nameEn == "" || assetCode == "" {
+		parentWaitGroup.Done()
 		return errors.New("field is empty ")
+
 	}
 	var lockD1 sync.Mutex
 	var lockH4 sync.Mutex
@@ -172,6 +174,7 @@ func avardAssetProcess(assetCode string, nameEn string, isIndex bool) error {
 		go av.Make(&wg, &lockD1, assetCode, nameEn, isIndex, -time.Duration(time.Hour*24*4000), time.Now(), h.D1, h.Adj)
 	}
 	wg.Wait()
+	parentWaitGroup.Done()
 	return nil
 }
 func avardSync() {
@@ -183,14 +186,16 @@ func avardMainProcess() error {
 	if e != nil {
 		return e
 	}
+	var wg sync.WaitGroup
+	wg.Add(len(list))
 
 	for _, g := range list {
-	 	 avardAssetProcess(g.AssetCode, g.NameEn, g.IsIndex)
-	/*	if e != nil {
+		go avardAssetProcess(&wg, g.AssetCode, g.NameEn, g.IsIndex)
+		/*	if e != nil {
 			return e
 		}*/
 	}
-
+	wg.Wait()
 	return nil
 }
 
