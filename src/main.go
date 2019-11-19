@@ -150,10 +150,8 @@ func avardAssetProcess(parentWaitGroup *sync.WaitGroup, assetCode string, nameEn
 		return errors.New("field is empty ")
 
 	}
-	var lockD1 sync.Mutex
-	var lockH4 sync.Mutex
-	var lockH2 sync.Mutex
-	var lockH1 sync.Mutex
+	var databaseLock sync.Mutex
+
 	var wg sync.WaitGroup
 	if isIndex == true {
 		wg.Add(2)
@@ -161,17 +159,17 @@ func avardAssetProcess(parentWaitGroup *sync.WaitGroup, assetCode string, nameEn
 		wg.Add(8)
 	}
 
-	go av.Make(&wg, &lockH1, assetCode, nameEn, isIndex, -time.Duration(time.Hour*24*150), time.Now(), h.H1, h.Normal)
-	go av.Make(&wg, &lockD1, assetCode, nameEn, isIndex, -time.Duration(time.Hour*24*4000), time.Now(), h.D1, h.Normal)
+	go av.Make(&wg, &databaseLock, assetCode, nameEn, isIndex, -time.Duration(time.Hour*24*150), time.Now(), h.H1, h.Normal)
+	go av.Make(&wg, &databaseLock, assetCode, nameEn, isIndex, -time.Duration(time.Hour*24*4000), time.Now(), h.D1, h.Normal)
 
 	if isIndex == false {
-		go av.Make(&wg, &lockH2, assetCode, nameEn, isIndex, -time.Duration(time.Hour*24*200), time.Now(), h.H2, h.Normal)
-		go av.Make(&wg, &lockH4, assetCode, nameEn, isIndex, -time.Duration(time.Hour*24*360), time.Now(), h.H4, h.Normal)
+		go av.Make(&wg, &databaseLock, assetCode, nameEn, isIndex, -time.Duration(time.Hour*24*200), time.Now(), h.H2, h.Normal)
+		go av.Make(&wg, &databaseLock, assetCode, nameEn, isIndex, -time.Duration(time.Hour*24*360), time.Now(), h.H4, h.Normal)
 
-		go av.Make(&wg, &lockH1, assetCode, nameEn, isIndex, -time.Duration(time.Hour*24*150), time.Now(), h.H1, h.Adj)
-		go av.Make(&wg, &lockH2, assetCode, nameEn, isIndex, -time.Duration(time.Hour*24*200), time.Now(), h.H2, h.Adj)
-		go av.Make(&wg, &lockH4, assetCode, nameEn, isIndex, -time.Duration(time.Hour*24*360), time.Now(), h.H4, h.Adj)
-		go av.Make(&wg, &lockD1, assetCode, nameEn, isIndex, -time.Duration(time.Hour*24*4000), time.Now(), h.D1, h.Adj)
+		go av.Make(&wg, &databaseLock, assetCode, nameEn, isIndex, -time.Duration(time.Hour*24*150), time.Now(), h.H1, h.Adj)
+		go av.Make(&wg, &databaseLock, assetCode, nameEn, isIndex, -time.Duration(time.Hour*24*200), time.Now(), h.H2, h.Adj)
+		go av.Make(&wg, &databaseLock, assetCode, nameEn, isIndex, -time.Duration(time.Hour*24*360), time.Now(), h.H4, h.Adj)
+		go av.Make(&wg, &databaseLock, assetCode, nameEn, isIndex, -time.Duration(time.Hour*24*4000), time.Now(), h.D1, h.Adj)
 	}
 	wg.Wait()
 	parentWaitGroup.Done()
