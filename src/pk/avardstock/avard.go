@@ -116,10 +116,13 @@ func SyncDb(assetCode string, frame ETimeFrame) error {
 		return er
 	}
 	db.Close()
-	return  nil
+	return nil
 }
-func Make(wg *sync.WaitGroup, lock *sync.Mutex, assetCode string, assetNameEn string, isIndex bool, duration time.Duration, end time.Time, timeFrame ETimeFrame, tc ETypeChart) error {
+func Make(wg *sync.WaitGroup, dbLock *sync.Mutex, assetCode string, assetNameEn string, isIndex bool, duration time.Duration, end time.Time, timeFrame ETimeFrame, tc ETypeChart) error {
+
+
 	defer wg.Done()
+
 	var db *gorm.DB
 	var fullPath string
 	//:::::::::::::::::::::::::::::::::::::::::
@@ -135,33 +138,35 @@ func Make(wg *sync.WaitGroup, lock *sync.Mutex, assetCode string, assetNameEn st
 		C:         0,
 		V:         0,
 	}
+
 	var dbname string = assetCode
 	if isIndex {
 		dbname = fmt.Sprintf("%si", assetCode)
 	}
 	db, fullPath, er := DatabaseInit(dbname, timeFrame.ToString(), db)
 	if er != nil {
-		return er
+		return errors.New(fmt.Sprintf("err:%v %v", er, fullPath))
 	}
 	//_________________
-	var isFind bool = false
-	var lock1 *sync.Mutex = lock
-	for _, g := range lockeList {
-		if g.p == fullPath {
-			isFind = true
-			lock1 = g.mutex
-		}
 
-	}
-	if isFind == false {
-		lockeList = append(lockeList, dbItem{db: db, p: fullPath, mutex: lock})
-	}
+	/*	var isFind bool = false
+		var lock1 *sync.Mutex = dbLock
+		for _, g := range lockeList {
+			if g.p == fullPath {
+				isFind = true
+				lock1 = g.mutex
+			}
+
+		}
+		if isFind == false {
+			lockeList = append(lockeList, dbItem{db: db, p: fullPath, mutex: dbLock})
+		}*/
 
 	defer closeMyDb(db)
 	//::::::::::::::::::::::::::::::::::::::::: Get LAst RECORD FROM DATABASE
 	{
 
-		e := getLastRecord(db, assetCode, timeFrame.ToMinuth(), tc, &last)
+		e := getLastRecord(db, dbLock, assetCode, timeFrame.ToMinuth(), tc, &last)
 		if e != nil {
 			return e
 		}
@@ -200,9 +205,9 @@ func Make(wg *sync.WaitGroup, lock *sync.Mutex, assetCode string, assetNameEn st
 
 	//::::::::::::::::::::::::::::::::::::::::: INSERT TO DATABASE
 	{
-		fmt.Println("Type",tc.ToTypeChartStr(),"asset ", assetNameEn, "time frame ", timeFrame.ToString(), "load from net : ", len(itemsRaws))
+		fmt.Println("Type", tc.ToTypeChartStr(), "asset ", assetNameEn, "time frame ", timeFrame.ToString(), "load from net : ", len(itemsRaws))
 		if len(itemsRaws) > 0 {
-			InsertStocks(db, lock1, isIndex, itemsRaws, assetCode, timeFrame, tc)
+			InsertStocks(db, dbLock, isIndex, itemsRaws, assetCode, timeFrame, tc)
 			//if err != nil {
 			//	return errors.New(fmt.Sprintf("Insert Stocks is fialed: %v ",err))
 			//}
@@ -210,7 +215,7 @@ func Make(wg *sync.WaitGroup, lock *sync.Mutex, assetCode string, assetNameEn st
 	}
 	//::::::::::::::::::::::::::::::::::::::::: LOAD FROM DATABASE AND OUT TO CSV
 	{
-		itemsRaw, err := getRecordesStock(db, assetCode, timeFrame, tc)
+		itemsRaw, err := getRecordesStock(db, dbLock, assetCode, timeFrame, tc)
 		if err != nil {
 			return errors.New(fmt.Sprintf("get Stocks is failed: %v ", err))
 		}
@@ -272,7 +277,7 @@ func ReadJsonWatchList() ([]watchListItem, error) {
 	}
 	return list, nil
 }
-func SyncFromTSE() error {
+func SyncFromTSE(dbLock *sync.Mutex) error {
 
 	var db1 *gorm.DB
 	//var fullPath string
@@ -341,7 +346,7 @@ func SyncFromTSE() error {
 		Items = append(Items, n)
 	}
 
-	e1 := InsertAssetInfoFromAvard(db, Items)
+	e1 := InsertAssetInfoFromAvard(db, dbLock, Items)
 	if e1 != nil {
 		return e1
 	}

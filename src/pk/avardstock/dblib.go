@@ -97,6 +97,7 @@ func DatabaseInit(dbName1 string, timefrm string, db1 *gorm.DB) (*gorm.DB, strin
 }
 func InsertStocks(d *gorm.DB, k *sync.Mutex, isIndex bool, stockList []StockFromWebService, assetid string, timeframe h.ETimeFrame, tc h.ETypeChart) error {
 	defer k.Unlock()
+
 	k.Lock()
 	if d == nil {
 		return errors.New("db not init")
@@ -138,8 +139,9 @@ func InsertStocks(d *gorm.DB, k *sync.Mutex, isIndex bool, stockList []StockFrom
 
 	return nil
 }
-func getLastRecord(d *gorm.DB, assetid string, timeframe int, tc h.ETypeChart, out *StockFromWebService) error {
-
+func getLastRecord(d *gorm.DB, k *sync.Mutex, assetid string, timeframe int, tc h.ETypeChart, out *StockFromWebService) error {
+	defer k.Unlock()
+	k.Lock()
 	if d == nil {
 		return errors.New("db not init")
 	}
@@ -153,7 +155,9 @@ func getLastRecord(d *gorm.DB, assetid string, timeframe int, tc h.ETypeChart, o
 	}
 	return nil
 }
-func getRecordesStock(d *gorm.DB, assetid string, timeframe h.ETimeFrame, tc h.ETypeChart) ([]StockFromWebService, error) {
+func getRecordesStock(d *gorm.DB, k *sync.Mutex, assetid string, timeframe h.ETimeFrame, tc h.ETypeChart) ([]StockFromWebService, error) {
+	defer k.Unlock()
+	k.Lock()
 
 	if d == nil {
 		return nil, errors.New("db not init")
@@ -169,7 +173,9 @@ func getRecordesStock(d *gorm.DB, assetid string, timeframe h.ETimeFrame, tc h.E
 	}
 	return items, nil
 }
-func InsertAssetInfoFromAvard(d *gorm.DB, avardsAsset []NemadAvard) error {
+func InsertAssetInfoFromAvard(d *gorm.DB, k *sync.Mutex, avardsAsset []NemadAvard) error {
+	defer k.Unlock()
+	k.Lock()
 	if d == nil {
 		return errors.New("db not init")
 	}

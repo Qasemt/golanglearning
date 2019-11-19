@@ -151,7 +151,6 @@ func avardAssetProcess(parentWaitGroup *sync.WaitGroup, assetCode string, nameEn
 
 	}
 	var databaseLock sync.Mutex
-
 	var wg sync.WaitGroup
 	if isIndex == true {
 		wg.Add(2)
@@ -176,7 +175,8 @@ func avardAssetProcess(parentWaitGroup *sync.WaitGroup, assetCode string, nameEn
 	return nil
 }
 func avardSync() {
-	av.SyncFromTSE()
+	var dbLock sync.Mutex
+	av.SyncFromTSE(&dbLock)
 }
 func avardMainProcess() error {
 	list, e := av.ReadJsonWatchList()
