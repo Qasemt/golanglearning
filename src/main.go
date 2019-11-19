@@ -182,7 +182,7 @@ func avardMainProcess() error {
 	list, e := av.ReadJsonWatchList()
 
 	if e != nil {
-		return e
+		return errors.New(fmt.Sprintf("config not found "))
 	}
 	var wg sync.WaitGroup
 	wg.Add(len(list))
@@ -204,28 +204,20 @@ func commands(a []string) error {
 		if e != nil {
 			return e
 		}
-	} else if len(a) == 2 && a[0] == "tehran" {
-		if len(a[1]) == 0 {
-			return errors.New(fmt.Sprintln("path src is empty"))
-		}
-		if len(a[2]) == 0 {
-			return errors.New(fmt.Sprintln("path dest is empty"))
-		}
-		if len(a[3]) != 0 && a[3] != "adj" {
-			return errors.New(fmt.Sprintln("arg 3 not valid"))
+	} else if len(a) > 0 && a[0] == "tehran" {
+		if len(a) == 1 {
+			e := avardMainProcess()
+			if e != nil {
+				return errors.New(fmt.Sprintf("tehran failed: %v", e))
+			}
+		} else if len(a) == 2 && a[0] == "tehran" && a[1]!="" {
+			h.SetRootCache(a[1])
+			e := avardMainProcess()
+			if e != nil {
+				return errors.New(fmt.Sprintf("tehran failed: %v", e))
+			}
 		}
 
-		if a[3] == "" {
-			e := st.RUNStock(a[1], a[2], false)
-			if e != nil {
-				return e
-			}
-		} else {
-			e := st.RUNStock(a[1], a[2], true)
-			if e != nil {
-				return e
-			}
-		}
 	} else {
 		s := fmt.Sprintf("Help args : [crypto] [BTCUSDT]\nHelp args : [tehran] [src dir path ] [dst dir path]")
 		return errors.New(s)
@@ -235,7 +227,7 @@ func commands(a []string) error {
 
 func main() {
 	//avardSync()
-	avardMainProcess()
+	//
 	e := commands(os.Args[1:])
 
 	if e != nil {

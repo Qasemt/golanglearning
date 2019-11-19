@@ -33,7 +33,7 @@ type dbItem struct {
 	mutex *sync.Mutex
 }
 
-var lockeList []dbItem
+//var lockeList []dbItem
 
 func downloadAsset(assetCode string, isIndex bool, item TimeRange, timefram ETimeFrame, tc ETypeChart) ([]StockFromWebService, error) {
 	var _rawKlines = []StockFromWebService{}

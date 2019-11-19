@@ -19,6 +19,7 @@ import (
 
 var url_proxy string
 var is_Socks bool
+var mRootCachePath string
 
 //::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 func SetProxy(v string, is_socks bool) error {
@@ -32,14 +33,20 @@ func SetProxy(v string, is_socks bool) error {
 	is_Socks = is_socks
 	return nil
 }
-func GetRootCache() string{
-	return "./d/"
+func GetRootCache() string {
+	if mRootCachePath == "" {
+		mRootCachePath = "./d/"
+	}
+	return mRootCachePath
+}
+func SetRootCache(p string) {
+	mRootCachePath = p
 }
 func GetProxy() string {
 	return url_proxy
 }
 func UnixMilli(t time.Time) int64 {
-		return t.Round(time.Millisecond).UnixNano() / (int64(time.Millisecond) / int64(time.Nanosecond))
+	return t.Round(time.Millisecond).UnixNano() / (int64(time.Millisecond) / int64(time.Nanosecond))
 }
 
 func UnixTimeToTime(millis int64) time.Time {
@@ -165,7 +172,7 @@ func GetJson(url_path string, target_object_json interface{}) error {
 			}
 		}
 
-	}else {
+	} else {
 		myClient = &http.Client{Timeout: 60 * time.Second}
 	}
 
