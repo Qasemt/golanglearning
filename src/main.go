@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"strings"
 	"sync"
 	"time"
 
@@ -174,10 +175,6 @@ func avardAssetProcess(parentWaitGroup *sync.WaitGroup, assetCode string, nameEn
 	parentWaitGroup.Done()
 	return nil
 }
-func avardSync() {
-	var dbLock sync.Mutex
-	av.SyncFromTSE(&dbLock)
-}
 func avardMainProcess() error {
 	list, e := av.ReadJsonWatchList()
 
@@ -204,18 +201,40 @@ func commands(a []string) error {
 		if e != nil {
 			return e
 		}
-	} else if len(a) > 0 && a[0] == "tehran" {
-		if len(a) == 1 {
-			e := avardMainProcess()
-			if e != nil {
-				return errors.New(fmt.Sprintf("tehran failed: %v", e))
+	} else if len(a) > 0 && strings.HasPrefix(strings.ToLower(a[0]), "tehran") {
+
+		for i := 1; i < len(a); i++ {
+			if strings.HasPrefix(strings.ToLower(a[i]), "cachepath=") {
+				p := strings.Split(a[1], "=")[1]
+				p = strings.Trim(p, `"`)
+				h.SetRootCache(p)
+				break
 			}
-		} else if len(a) == 2 && a[0] == "tehran" && a[1]!="" {
-			h.SetRootCache(a[1])
-			e := avardMainProcess()
-			if e != nil {
-				return errors.New(fmt.Sprintf("tehran failed: %v", e))
+		}
+		for i := 1; i < len(a); i++ {
+			if strings.HasPrefix(strings.ToLower(a[i]), "synclist") {
+				var dbLock sync.Mutex
+				e := av.SyncStockList(&dbLock)
+				if e != nil {
+					return errors.New(fmt.Sprintf("tehran failed: %v", e))
+				}
+				return nil
 			}
+		}
+		for i := 1; i < len(a); i++ {
+			if strings.HasPrefix(strings.ToLower(a[i]), "stockList") {
+				var dbLock sync.Mutex
+				e := av.OutStockList(&dbLock)
+				if e != nil {
+					return errors.New(fmt.Sprintf("tehran failed: %v", e))
+				}
+				return nil
+			}
+		}
+
+		e := avardMainProcess()
+		if e != nil {
+			return errors.New(fmt.Sprintf("tehran failed: %v", e))
 		}
 
 	} else {

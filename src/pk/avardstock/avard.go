@@ -10,6 +10,7 @@ import (
 	"os"
 	"path"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 )
@@ -243,9 +244,9 @@ func Make(wg *sync.WaitGroup, dbLock *sync.Mutex, assetCode string, assetNameEn 
 			}
 			var fileName string = ""
 			if tc == Normal {
-				fileName = fmt.Sprintf("%v.csv", assetNameEn)
+				fileName = fmt.Sprintf("%v_%v.csv", assetNameEn,strings.ToLower(timeFrame.ToString2()))
 			} else {
-				fileName = fmt.Sprintf("%v_%v.csv", assetNameEn, "Adj")
+				fileName = fmt.Sprintf("%v_%v_%v.csv", assetNameEn,strings.ToLower(timeFrame.ToString2()), "a")
 			}
 
 			if !OutToCSVFile(itemsFinal, dirCachePath, fileName, true) {
@@ -277,7 +278,7 @@ func ReadJsonWatchList() ([]watchListItem, error) {
 	}
 	return list, nil
 }
-func SyncFromTSE(dbLock *sync.Mutex) error {
+func SyncStockList(dbLock *sync.Mutex) error {
 
 	var db1 *gorm.DB
 	//var fullPath string
@@ -315,11 +316,11 @@ func SyncFromTSE(dbLock *sync.Mutex) error {
 	}
 
 	if rawsAsset.Data == nil || rawsIndex.Data == nil {
-		return errors.New("SyncFromTSE failed ... ")
+		return errors.New("SyncStockList failed ... ")
 	}
 
 	if len(rawsAsset.Data) == 0 || len(rawsIndex.Data) == 0 {
-		return errors.New("SyncFromTSE -> data from net is empty  ... ")
+		return errors.New("SyncStockList -> data from net is empty  ... ")
 	}
 	var Items []NemadAvard
 	for i := 0; i < len(rawsAsset.Data); i++ {
@@ -351,5 +352,9 @@ func SyncFromTSE(dbLock *sync.Mutex) error {
 		return e1
 	}
 
+	return nil
+}
+
+func OutStockList(dbLock *sync.Mutex) error {
 	return nil
 }

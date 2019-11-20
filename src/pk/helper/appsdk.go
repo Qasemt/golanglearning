@@ -61,7 +61,25 @@ type TimeRange struct {
 	Begin     time.Time
 	End       time.Time
 }
+func (e ETimeFrame) ToString2() string {
+	switch e {
+	case M1:
+		return "1min"
+	case M15:
+		return "15min"
+	case H1:
+		return "1h"
+	case H2:
+		return "2h"
+	case H4:
+		return "4h"
+	case D1:
+		return "D"
 
+	default:
+		return fmt.Sprintf("%d", int(e))
+	}
+}
 func (e ETimeFrame) ToString() string {
 	switch e {
 	case M1:
