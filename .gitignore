@@ -16,3 +16,5 @@ src/logs/misc.log
 /pkg
 src/__debug_bin
 
+/src/d/tehran
+/src/d/cache
