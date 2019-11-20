@@ -144,7 +144,7 @@ func tehranTSEC() {
 	//stockwork.RUNStock("D:/workspace/stock/tseclient/normal/", "D:/out/", false)
 	//stockwork.RUNStock("D:/workspace/stock/tseclient/Adjusted/", "D:/out2/", true)
 }
-func avardAssetProcess(parentWaitGroup *sync.WaitGroup, assetCode string, nameEn string, isIndex bool) error {
+func avardAssetProcess(parentWaitGroup *sync.WaitGroup, readfromLast bool, assetCode string, nameEn string, isIndex bool) error {
 	//var id string ="IRO1GDIR0001"
 	if nameEn == "" || assetCode == "" {
 		parentWaitGroup.Done()
@@ -159,23 +159,23 @@ func avardAssetProcess(parentWaitGroup *sync.WaitGroup, assetCode string, nameEn
 		wg.Add(8)
 	}
 
-	go av.Make(&wg, &databaseLock, assetCode, nameEn, isIndex, -time.Duration(time.Hour*24*150), time.Now(), h.H1, h.Normal)
-	go av.Make(&wg, &databaseLock, assetCode, nameEn, isIndex, -time.Duration(time.Hour*24*4000), time.Now(), h.D1, h.Normal)
+	go av.Make(&wg, &databaseLock, readfromLast, assetCode, nameEn, isIndex, -time.Duration(time.Hour*24*250), time.Now(), h.H1, h.Normal)
+	go av.Make(&wg, &databaseLock, readfromLast, assetCode, nameEn, isIndex, -time.Duration(time.Hour*24*4000), time.Now(), h.D1, h.Normal)
 
 	if isIndex == false {
-		go av.Make(&wg, &databaseLock, assetCode, nameEn, isIndex, -time.Duration(time.Hour*24*200), time.Now(), h.H2, h.Normal)
-		go av.Make(&wg, &databaseLock, assetCode, nameEn, isIndex, -time.Duration(time.Hour*24*360), time.Now(), h.H4, h.Normal)
+		go av.Make(&wg, &databaseLock, readfromLast, assetCode, nameEn, isIndex, -time.Duration(time.Hour*24*250), time.Now(), h.H2, h.Normal)
+		go av.Make(&wg, &databaseLock, readfromLast, assetCode, nameEn, isIndex, -time.Duration(time.Hour*24*360), time.Now(), h.H4, h.Normal)
 
-		go av.Make(&wg, &databaseLock, assetCode, nameEn, isIndex, -time.Duration(time.Hour*24*150), time.Now(), h.H1, h.Adj)
-		go av.Make(&wg, &databaseLock, assetCode, nameEn, isIndex, -time.Duration(time.Hour*24*200), time.Now(), h.H2, h.Adj)
-		go av.Make(&wg, &databaseLock, assetCode, nameEn, isIndex, -time.Duration(time.Hour*24*360), time.Now(), h.H4, h.Adj)
-		go av.Make(&wg, &databaseLock, assetCode, nameEn, isIndex, -time.Duration(time.Hour*24*4000), time.Now(), h.D1, h.Adj)
+		go av.Make(&wg, &databaseLock, readfromLast, assetCode, nameEn, isIndex, -time.Duration(time.Hour*24*250), time.Now(), h.H1, h.Adj)
+		go av.Make(&wg, &databaseLock, readfromLast, assetCode, nameEn, isIndex, -time.Duration(time.Hour*24*250), time.Now(), h.H2, h.Adj)
+		go av.Make(&wg, &databaseLock, readfromLast, assetCode, nameEn, isIndex, -time.Duration(time.Hour*24*360), time.Now(), h.H4, h.Adj)
+		go av.Make(&wg, &databaseLock, readfromLast, assetCode, nameEn, isIndex, -time.Duration(time.Hour*24*4000), time.Now(), h.D1, h.Adj)
 	}
 	wg.Wait()
 	parentWaitGroup.Done()
 	return nil
 }
-func avardMainProcess() error {
+func avardMainProcess(readfromLast bool) error {
 	list, e := av.ReadJsonWatchList()
 
 	if e != nil {
@@ -185,7 +185,7 @@ func avardMainProcess() error {
 	wg.Add(len(list))
 
 	for _, g := range list {
-		go avardAssetProcess(&wg, g.AssetCode, g.NameEn, g.IsIndex)
+		go avardAssetProcess(&wg, readfromLast, g.AssetCode, g.NameEn, g.IsIndex)
 		/*	if e != nil {
 			return e
 		}*/
@@ -212,7 +212,7 @@ func commands(a []string) error {
 			}
 		}
 		for i := 1; i < len(a); i++ {
-			if strings.HasPrefix(strings.ToLower(a[i]), "synclist") {
+			if strings.HasPrefix(strings.ToLower(a[i]), "-synclist") {
 				var dbLock sync.Mutex
 				e := av.SyncStockList(&dbLock)
 				if e != nil {
@@ -221,8 +221,14 @@ func commands(a []string) error {
 				return nil
 			}
 		}
+		isreadFromLast := false
 		for i := 1; i < len(a); i++ {
-			if strings.HasPrefix(strings.ToLower(a[i]), "stockList") {
+			if strings.HasPrefix(strings.ToLower(a[i]), "-readfromlast") {
+				isreadFromLast = true
+			}
+		}
+		for i := 1; i < len(a); i++ {
+			if strings.HasPrefix(strings.ToLower(a[i]), "-stockList") {
 				var dbLock sync.Mutex
 				e := av.OutStockList(&dbLock)
 				if e != nil {
@@ -232,7 +238,7 @@ func commands(a []string) error {
 			}
 		}
 
-		e := avardMainProcess()
+		e := avardMainProcess(isreadFromLast)
 		if e != nil {
 			return errors.New(fmt.Sprintf("tehran failed: %v", e))
 		}

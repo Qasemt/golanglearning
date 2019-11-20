@@ -119,8 +119,7 @@ func SyncDb(assetCode string, frame ETimeFrame) error {
 	db.Close()
 	return nil
 }
-func Make(wg *sync.WaitGroup, dbLock *sync.Mutex, assetCode string, assetNameEn string, isIndex bool, duration time.Duration, end time.Time, timeFrame ETimeFrame, tc ETypeChart) error {
-
+func Make(wg *sync.WaitGroup, dbLock *sync.Mutex, readfromLast bool, assetCode string, assetNameEn string, isIndex bool, duration time.Duration, end time.Time, timeFrame ETimeFrame, tc ETypeChart) error {
 
 	defer wg.Done()
 
@@ -164,19 +163,17 @@ func Make(wg *sync.WaitGroup, dbLock *sync.Mutex, assetCode string, assetNameEn 
 		}*/
 
 	defer closeMyDb(db)
-	//::::::::::::::::::::::::::::::::::::::::: Get LAst RECORD FROM DATABASE
-	{
 
-		e := getLastRecord(db, dbLock, assetCode, timeFrame.ToMinuth(), tc, &last)
-		if e != nil {
-			return e
-		}
-	}
 	//::::::::::::::::::::::::::::::::::::::::: Get LOOP FROM WEB SERVICE
 	var times []TimeRange
 	var it = TimeRange{}
 	//var itemsFinal []StockItem
-	if timeFrame != D1 {
+	if readfromLast {
+		//::::::::::::::::::::::::::::::::::::::::: Get LAst RECORD FROM DATABASE
+		e := getLastRecord(db, dbLock, assetCode, timeFrame.ToMinuth(), tc, &last)
+		if e != nil {
+			return e
+		}
 		if last.ID == 0 {
 			it.Begin = end.Add(duration)
 		} else {
@@ -184,19 +181,18 @@ func Make(wg *sync.WaitGroup, dbLock *sync.Mutex, assetCode string, assetNameEn 
 			if last.Time == 0 {
 				return errors.New("last time not valid ")
 			}
-
 			it.Begin = time.Unix(0, last.Time*int64(time.Millisecond))
 		}
 		it.End = end
 		times = append(times, it)
-	} else {
+	} else
+	{
 		t := GetDateRangeYears(duration, end)
 		times = append(times, t...)
 	}
 
 	var itemsRaws []StockFromWebService
 	for _, h := range times {
-
 		raws, e := downloadAsset(assetCode, isIndex, h, timeFrame, tc)
 		if e != nil {
 			return e
@@ -244,9 +240,9 @@ func Make(wg *sync.WaitGroup, dbLock *sync.Mutex, assetCode string, assetNameEn 
 			}
 			var fileName string = ""
 			if tc == Normal {
-				fileName = fmt.Sprintf("%v_%v.csv", assetNameEn,strings.ToLower(timeFrame.ToString2()))
+				fileName = fmt.Sprintf("%v_%v.csv", assetNameEn, strings.ToLower(timeFrame.ToString2()))
 			} else {
-				fileName = fmt.Sprintf("%v_%v_%v.csv", assetNameEn,strings.ToLower(timeFrame.ToString2()), "a")
+				fileName = fmt.Sprintf("%v_%v_%v.csv", assetNameEn, strings.ToLower(timeFrame.ToString2()), "a")
 			}
 
 			if !OutToCSVFile(itemsFinal, dirCachePath, fileName, true) {
