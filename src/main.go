@@ -3,93 +3,28 @@ package main
 import (
 	"errors"
 	"fmt"
-	"os"
-	"strings"
-	"sync"
-	"time"
-
 	av "github.com/qasemt/avardstock"
 	b "github.com/qasemt/binance"
 	h "github.com/qasemt/helper"
 	st "github.com/qasemt/stockwork"
+	"os"
+	"strings"
+	"sync"
+	"time"
 )
 
 var appIniStr = "app init"
 
 func init() {
 	fmt.Printf(appIniStr + "\n")
-	//err := h.SetProxy("socks5://127.0.0.1:9150", true)
-	//err := h.SetProxy("socks5://127.0.0.1:10028", true) // psiphon
-	//if err != nil {
-	//	return
-	//}
+	err := h.SetProxy("socks://127.0.0.1:9150", true)
+	//err := h.SetProxy("http://38.113.170.11:45864", false) // psiphon
+	if err != nil {
+		return
+	}
 }
-func runCoin(asset string) error {
-	//:::::::::::::::::::::::::::::::::::::::: CRYPTO
 
-	var begin time.Time
-	var end time.Time
-	end = (time.Now())
-	//:::::::::::::::::::::::::::::::::::::::: CRYPTO minute
-	//f := time.Minute * -30
-	//begin = (end.Add(f))
-
-	now1 := time.Now()
-	e1 := st.GetAssetCreateLastCandel(asset, now1, h.M15)
-	if e1 != nil {
-		return e1
-	}
-	e2 := st.GetAssetCreateLastCandel(asset, now1, h.H1)
-	if e2 != nil {
-		return e2
-	}
-
-	e3 := st.GetAssetCreateLastCandel(asset, now1, h.H2)
-	if e3 != nil {
-		return e3
-	}
-	e4 := st.GetAssetCreateLastCandel(asset, now1, h.H4)
-	if e4 != nil {
-		return e4
-	}
-	e5 := st.GetAssetCreateLastCandel(asset, now1, h.D1)
-	if e5 != nil {
-		return e5
-	}
-
-	//:::::::::::::::::::::::::::::::::::::::: CRYPTO HOUR
-	begin = (end.AddDate(0, 0, -30))
-	e6 := st.GetAsset("BTCUSDT", begin, end, h.M15, "D:\\workspace\\stock\\data\\crypto\\new\\btcusdtm15.csv")
-	if e6 != nil {
-		return e6
-	}
-
-	begin = (end.AddDate(0, 0, -30))
-	e7 := st.GetAsset("BTCUSDT", begin, end, h.H1, "D:\\workspace\\stock\\data\\crypto\\new\\btcusdth1.csv")
-	if e7 != nil {
-		return e7
-	}
-
-	begin = (end.AddDate(0, 0, -30))
-	e8 := st.GetAsset("BTCUSDT", begin, end, h.H2, "D:\\workspace\\stock\\data\\crypto\\new\\btcusdth2.csv")
-	if e8 != nil {
-		return e8
-	}
-	begin = (end.AddDate(0, 0, -100))
-	e9 := st.GetAsset("BTCUSDT", begin, end, h.H4, "D:\\workspace\\stock\\data\\crypto\\new\\btcusdth4.csv")
-	if e9 != nil {
-		return e9
-	}
-	//:::::::::::::::::::::::::::::::::::::::: CRYPTO DAILY
-	begin = (end.AddDate(-2, 0, 0))
-	e10 := st.GetAssetYear("BTCUSDT", begin, end, h.D1, "D:\\workspace\\stock\\data\\crypto\\new\\btcusdt_d.csv")
-	if e10 != nil {
-		return e10
-	}
-	//:::::::::::::::::::::::::::::::::::::::: CRYPTO 1 min
-	return nil
-}
-func doingLoadCoinWithTime() (bool, error) {
+/*func doingLoadCoinWithTime() (bool, error) {
 	err := runCoin("BTCUSDT")
 
 	if err != nil {
@@ -112,7 +47,7 @@ func doingLoadCoinWithTime() (bool, error) {
 		}
 	}
 
-}
+}*/
 func binanceV2() {
 	f := b.MakeCacheHourly("BTCUSDT", h.M15, h.H1, time.Duration(time.Hour*24*1), time.Now())
 	fmt.Println(f)
@@ -196,11 +131,27 @@ func avardMainProcess(readfromLast bool) error {
 
 //OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO
 func commands(a []string) error {
-	if len(a) == 2 && a[0] == "crypto" && a[1] == "BTCUSDT" {
-		e := runCoin(a[1])
-		if e != nil {
-			return e
+	if len(a) > 0 && strings.ToLower(a[0]) == "crypto" {
+		//proxy=socks5://127.0.0.1:9150
+		for i := 1; i < len(a); i++ {
+			if strings.HasPrefix(strings.ToLower(a[i]), "proxy=") {
+				p := strings.Split(a[i], "=")[1]
+				p = strings.Trim(p, `"`)
+				err := h.SetProxy(p, true)
+				if err != nil {
+					return err
+				}
+				break
+			}
 		}
+
+		if strings.ToLower(a[1]) == "btcusdt" {
+			e := st.Make(a[1])
+			if e != nil {
+				return e
+			}
+		}
+
 	} else if len(a) > 0 && strings.HasPrefix(strings.ToLower(a[0]), "tehran") {
 
 		for i := 1; i < len(a); i++ {

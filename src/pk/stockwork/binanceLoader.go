@@ -7,6 +7,7 @@ import (
 	"os"
 	"path"
 	"strconv"
+	"strings"
 	"time"
 
 
@@ -14,7 +15,7 @@ import (
 
 
 
-var cachePath = "d:/cache/"
+
 var cacheLastCandel = "lastcandel"
 
 
@@ -55,14 +56,14 @@ func timeFromUnixTimestampFloat(raw interface{}) (time.Time, error) {
 
 
 
-func GetAsset(assetName string, start time.Time, end time.Time, timeframe ETimeFrame, final_out string) error {
+func GetAsset(assetName string, start time.Time, end time.Time, timeframe ETimeFrame) error {
 
 	rawKlines := [][]interface{}{}
 	day_rang := []TimeRange{}
 	file_list := []string{}
 	var dir_cache_path string
-	dir_cache_path = path.Join(cachePath, assetName, timeframe.ToString())
-	last_candel := path.Join(cachePath, cacheLastCandel, assetName, (timeframe).ToString()+".csv")
+	dir_cache_path = path.Join(GetRootCache(),"data" ,"crypto", assetName, timeframe.ToString())
+	last_candel := path.Join(GetRootCache(),"data" ,"crypto", cacheLastCandel, assetName, (timeframe).ToString()+".csv")
 	var items_final []StockItem
 
 	//threeDays := time.Hour * 24 * 3
@@ -140,7 +141,9 @@ func GetAsset(assetName string, start time.Time, end time.Time, timeframe ETimeF
 			}
 		}
 	}
-	if !JoinCSVFiles(dir_cache_path, file_list, final_out, last_candel) {
+	 filePath := path.Join(GetRootCache(), "crypto", assetName,fmt.Sprintf("%v_%v.csv", strings.ToLower(assetName), strings.ToLower(timeframe.ToString2())) )
+
+	if !JoinCSVFiles(dir_cache_path, file_list,filePath , last_candel) {
 		return errors.New("get asset >>> join last candel failed")
 	}
 
@@ -150,7 +153,7 @@ func GetAssetCreateLastCandel(assetName string, end time.Time, timeframe ETimeFr
 
 	rawKlines := [][]interface{}{}
 	var dir_cache_path string
-	dir_cache_path = path.Join(cachePath, cacheLastCandel, assetName)
+	dir_cache_path = path.Join(GetRootCache(),"data" ,"crypto", cacheLastCandel, assetName)
 
 	var items_final []StockItem
 
@@ -243,14 +246,14 @@ func GetAssetCreateLastCandel(assetName string, end time.Time, timeframe ETimeFr
 
 var global_rawKlines = [][]interface{}{}
 
-func GetAssetYear(asset_name string, start time.Time, end time.Time, timeframe ETimeFrame, final_out string) error {
+func GetAssetYear(asset_name string, start time.Time, end time.Time, timeframe ETimeFrame) error {
 
 	rawKlines := [][]interface{}{}
 	day_rang := []TimeRange{}
 	file_list := []string{}
 	var dir_cache_path string
-	dir_cache_path = path.Join(cachePath, asset_name, timeframe.ToString())
-	last_candel := path.Join(cachePath, cacheLastCandel, asset_name, (D1).ToString()+".csv")
+	dir_cache_path = path.Join(GetRootCache(),"data" ,"crypto", asset_name, timeframe.ToString())
+	last_candel := path.Join(GetRootCache(),"data" ,"crypto", cacheLastCandel, asset_name, (D1).ToString()+".csv")
 	var items_final []StockItem
 
 	//threeDays := time.Hour * 24 * 3
@@ -326,8 +329,9 @@ func GetAssetYear(asset_name string, start time.Time, end time.Time, timeframe E
 			}
 		}
 	}
+	filePath := path.Join(GetRootCache(), "crypto", asset_name,fmt.Sprintf("%v_%v.csv", strings.ToLower(asset_name), strings.ToLower(timeframe.ToString2())) )
 
-	if !JoinCSVFiles(dir_cache_path, file_list, final_out, last_candel) {
+	if !JoinCSVFiles(dir_cache_path, file_list, filePath, last_candel) {
 		return errors.New("get asset daily >>> join last candel failed")
 	}
 
@@ -335,3 +339,68 @@ func GetAssetYear(asset_name string, start time.Time, end time.Time, timeframe E
 }
 
 
+func Make(asset string) error {
+	//:::::::::::::::::::::::::::::::::::::::: CRYPTO
+
+	var begin time.Time
+	var end time.Time
+	end = (time.Now())
+	//:::::::::::::::::::::::::::::::::::::::: CRYPTO minute
+	//f := time.Minute * -30
+	//begin = (end.Add(f))
+
+	now1 := time.Now()
+	e1 := GetAssetCreateLastCandel(asset, now1, M15)
+	if e1 != nil {
+		return e1
+	}
+	e2 := GetAssetCreateLastCandel(asset, now1, H1)
+	if e2 != nil {
+		return e2
+	}
+
+	e3 := GetAssetCreateLastCandel(asset, now1, H2)
+	if e3 != nil {
+		return e3
+	}
+	e4 := GetAssetCreateLastCandel(asset, now1, H4)
+	if e4 != nil {
+		return e4
+	}
+	e5 := GetAssetCreateLastCandel(asset, now1, D1)
+	if e5 != nil {
+		return e5
+	}
+
+	//:::::::::::::::::::::::::::::::::::::::: CRYPTO HOUR
+	begin = (end.AddDate(0, 0, -30))
+	e6 := GetAsset(asset, begin, end, M15)
+	if e6 != nil {
+		return e6
+	}
+
+	begin = (end.AddDate(0, 0, -30))
+	e7 := GetAsset(asset, begin, end, H1)
+	if e7 != nil {
+		return e7
+	}
+
+	begin = (end.AddDate(0, 0, -30))
+	e8 := GetAsset(asset, begin, end, H2)
+	if e8 != nil {
+		return e8
+	}
+	begin = (end.AddDate(0, 0, -100))
+	e9 := GetAsset(asset, begin, end, H4)
+	if e9 != nil {
+		return e9
+	}
+	//:::::::::::::::::::::::::::::::::::::::: CRYPTO DAILY
+	begin = (end.AddDate(-2, 0, 0))
+	e10 := GetAssetYear(asset, begin, end, D1 )
+	if e10 != nil {
+		return e10
+	}
+	//:::::::::::::::::::::::::::::::::::::::: CRYPTO 1 min
+	return nil
+}
