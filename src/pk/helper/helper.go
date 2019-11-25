@@ -10,6 +10,7 @@ import (
 	"net/url"
 	"os"
 	"path"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
@@ -24,11 +25,11 @@ var mRootCachePath string
 //::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 func SetProxy(v string, is_socks bool) error {
 
-	_, err := url.Parse(v)
+	/*_, err := url.Parse(v)
 	if err != nil {
 		fmt.Println("Malformed URL: ", err.Error())
 		return err
-	}
+	}*/
 	url_proxy = v
 	is_Socks = is_socks
 	return nil
@@ -343,8 +344,17 @@ func JoinCSVFiles(dir_path string, dst_file_csv_list []string, out_final_file st
 	if _, err := os.Stat(dir_path); os.IsNotExist(err) {
 		return false
 	}
+	a := filepath.Dir(out_final_file)
+	if _, err := os.Stat(a); os.IsNotExist(err) {
+		merr := os.MkdirAll(a, os.ModePerm)
+		if merr != nil {
+			return false
+		}
+	}
+
 	file, err := os.Create(out_final_file)
 	if err != nil {
+		fmt.Println(fmt.Sprintf("joinCsvFiles() failed -> ", out_final_file))
 		return false
 	}
 	defer file.Close()

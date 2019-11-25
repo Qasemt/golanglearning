@@ -17,11 +17,11 @@ var appIniStr = "app init"
 
 func init() {
 	fmt.Printf(appIniStr + "\n")
-	err := h.SetProxy("socks://127.0.0.1:9150", true)
-	//err := h.SetProxy("http://38.113.170.11:45864", false) // psiphon
-	if err != nil {
+	//err := h.SetProxy("127.0.0.1:9150", true)
+	//err := h.SetProxy("https://127.0.0.1:5051", false) // psiphon
+/*	if err != nil {
 		return
-	}
+	}*/
 }
 
 /*func doingLoadCoinWithTime() (bool, error) {
@@ -132,12 +132,26 @@ func avardMainProcess(readfromLast bool) error {
 //OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO
 func commands(a []string) error {
 	if len(a) > 0 && strings.ToLower(a[0]) == "crypto" {
-		//proxy=socks5://127.0.0.1:9150
+
+		for i := 1; i < len(a); i++ {
+			if strings.HasPrefix(strings.ToLower(a[i]), "cachepath=") {
+				p := strings.Split(a[i], "=")[1]
+				p = strings.Trim(p, `"`)
+				h.SetRootCache(p)
+				break
+			}
+		}
+
 		for i := 1; i < len(a); i++ {
 			if strings.HasPrefix(strings.ToLower(a[i]), "proxy=") {
 				p := strings.Split(a[i], "=")[1]
 				p = strings.Trim(p, `"`)
-				err := h.SetProxy(p, true)
+				isSocks :=false
+				if strings.HasPrefix(strings.ToLower(p ), "socks5") {
+					isSocks =true
+				}
+				p = strings.Replace(p, "socks5://","",-1)
+				err := h.SetProxy(p, isSocks)
 				if err != nil {
 					return err
 				}

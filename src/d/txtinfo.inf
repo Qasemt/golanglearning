@@ -1,0 +1,14 @@
+delimit  = ,
+skip     =   1
+dt       =  1
+ti       =  2
+op       =  3
+hi       =  4
+lo       =  5
+cl       =  6
+vol      =  7
+oi       =  0
+dtformat = CCYYMMDD
+tiformat = HHMMSS
+ext      = csv
+cf       = 4

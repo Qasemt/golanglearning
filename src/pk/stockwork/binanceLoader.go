@@ -62,8 +62,8 @@ func GetAsset(assetName string, start time.Time, end time.Time, timeframe ETimeF
 	day_rang := []TimeRange{}
 	file_list := []string{}
 	var dir_cache_path string
-	dir_cache_path = path.Join(GetRootCache(),"data" ,"crypto", assetName, timeframe.ToString())
-	last_candel := path.Join(GetRootCache(),"data" ,"crypto", cacheLastCandel, assetName, (timeframe).ToString()+".csv")
+	dir_cache_path = path.Join(GetRootCache(),"cache" ,"crypto", assetName, timeframe.ToString())
+	last_candel := path.Join(GetRootCache(),"cache" ,"crypto", cacheLastCandel, assetName, (timeframe).ToString()+".csv")
 	var items_final []StockItem
 
 	//threeDays := time.Hour * 24 * 3
@@ -153,7 +153,7 @@ func GetAssetCreateLastCandel(assetName string, end time.Time, timeframe ETimeFr
 
 	rawKlines := [][]interface{}{}
 	var dir_cache_path string
-	dir_cache_path = path.Join(GetRootCache(),"data" ,"crypto", cacheLastCandel, assetName)
+	dir_cache_path = path.Join(GetRootCache(),"cache" ,"crypto", cacheLastCandel, assetName)
 
 	var items_final []StockItem
 
@@ -193,7 +193,7 @@ func GetAssetCreateLastCandel(assetName string, end time.Time, timeframe ETimeFr
 		e := fmt.Errorf("GetAssetCreateLastCandel: failed plz change your ip ,current ip block from binance -> %v time-frame :%v", assetName, timeframe)
 		return e
 	}
-	fmt.Println(":::", assetName, timeframe, TimeToString(item.Begin, ""), TimeToString(item.End, ""), len(rawKlines))
+	fmt.Println("::: Last ", assetName, timeframe.ToString2(), TimeToString(item.Begin, ""), TimeToString(item.End, ""), len(rawKlines))
 	for _, k := range rawKlines {
 		var v StockItem
 		time1, _ := timeFromUnixTimestampFloat(k[0])
@@ -249,12 +249,12 @@ var global_rawKlines = [][]interface{}{}
 func GetAssetYear(asset_name string, start time.Time, end time.Time, timeframe ETimeFrame) error {
 
 	rawKlines := [][]interface{}{}
-	day_rang := []TimeRange{}
-	file_list := []string{}
-	var dir_cache_path string
-	dir_cache_path = path.Join(GetRootCache(),"data" ,"crypto", asset_name, timeframe.ToString())
-	last_candel := path.Join(GetRootCache(),"data" ,"crypto", cacheLastCandel, asset_name, (D1).ToString()+".csv")
-	var items_final []StockItem
+	dayRang := []TimeRange{}
+	fileList := []string{}
+	var dirCachePath string
+	dirCachePath = path.Join(GetRootCache(),"cache" ,"crypto", asset_name, timeframe.ToString())
+	lastCandel := path.Join(GetRootCache(),"cache" ,"crypto", cacheLastCandel, asset_name, (D1).ToString()+".csv")
+	var itemsFinal []StockItem
 
 	//threeDays := time.Hour * 24 * 3
 	//	diff := now.Add(threeDays)
@@ -270,17 +270,17 @@ func GetAssetYear(asset_name string, start time.Time, end time.Time, timeframe E
 
 		d1.End = time.Date(y, 12, 31, 23, 59, 59, int(time.Second-time.Nanosecond), tt.Location())
 
-		day_rang = append(day_rang, d1)
+		dayRang = append(dayRang, d1)
 	}
 
-	for _, item := range day_rang {
-		items_final = items_final[:0]
+	for _, item := range dayRang {
+		itemsFinal = itemsFinal[:0]
 
 		start_str := strconv.FormatInt(UnixMilli(item.Begin), 10)
 		end_str := strconv.FormatInt(UnixMilli(item.End), 10)
 
-		var final_out = path.Join(dir_cache_path, item.File_name)
-		file_list = append(file_list, item.File_name)
+		var final_out = path.Join(dirCachePath, item.File_name)
+		fileList = append(fileList, item.File_name)
 
 		if IsExist(final_out) && item.Begin.Year() == time.Now().Year() {
 			var err = os.Remove(final_out)
@@ -320,18 +320,18 @@ func GetAssetYear(asset_name string, start time.Time, end time.Time, timeframe E
 			volume, _ := floatFromString(k[5])
 			v.V = volume
 
-			items_final = append(items_final, v)
+			itemsFinal = append(itemsFinal, v)
 
 		}
-		if len(items_final) > 0 {
-			if !OutToCSVFile(items_final, dir_cache_path, item.File_name, false) {
+		if len(itemsFinal) > 0 {
+			if !OutToCSVFile(itemsFinal, dirCachePath, item.File_name, false) {
 				return errors.New("get asset daily >>> out to csv failed")
 			}
 		}
 	}
 	filePath := path.Join(GetRootCache(), "crypto", asset_name,fmt.Sprintf("%v_%v.csv", strings.ToLower(asset_name), strings.ToLower(timeframe.ToString2())) )
 
-	if !JoinCSVFiles(dir_cache_path, file_list, filePath, last_candel) {
+	if !JoinCSVFiles(dirCachePath, fileList, filePath, lastCandel) {
 		return errors.New("get asset daily >>> join last candel failed")
 	}
 
