@@ -105,7 +105,7 @@ func GetAsset(assetName string, start time.Time, end time.Time, timeframe ETimeF
 		}
 
 		fmt.Printf(">>> %v %v %v \n", assetName, timeframe.ToString(), TimeToString(item.Begin, "yyyy-mm-dd"))
-		err := GetJson("https://api.binance.com/api/v3/klines?symbol="+assetName+"&interval="+timeframe.ToString()+"&startTime="+start_str+"&endTime="+end_str, &rawKlines)
+		err := GetJsonBin("api/v1/klines?symbol="+assetName+"&interval="+timeframe.ToString()+"&startTime="+start_str+"&endTime="+end_str, &rawKlines)
 		if err != nil {
 			return err
 		}
@@ -185,7 +185,7 @@ func GetAssetCreateLastCandel(assetName string, end time.Time, timeframe ETimeFr
 	start_str := strconv.FormatInt(UnixMilli(item.Begin), 10)
 	end_str := strconv.FormatInt(UnixMilli(item.End), 10)
 
-	err := GetJson("https://api.binance.com/api/v3/klines?symbol="+assetName+"&interval=1m&startTime="+start_str+"&endTime="+end_str, &rawKlines)
+	err := GetJsonBin("api/v1/klines?symbol="+assetName+"&interval=1m&startTime="+start_str+"&endTime="+end_str, &rawKlines)
 	if err != nil {
 		return err
 	}
@@ -293,7 +293,7 @@ func GetAssetYear(asset_name string, start time.Time, end time.Time, timeframe E
 		}
 		fmt.Printf(">>> %v %v %v \n", asset_name, timeframe.ToString(), TimeToString(item.Begin, "yyyy-mm-dd"))
 
-		err := GetJson("https://api.binance.com/api/v3/klines?symbol="+asset_name+"&interval="+timeframe.ToString()+"&startTime="+start_str+"&endTime="+end_str, &rawKlines)
+		err := GetJsonBin("api/v1/klines?symbol="+asset_name+"&interval="+timeframe.ToString()+"&startTime="+start_str+"&endTime="+end_str, &rawKlines)
 		if err != nil {
 			return err
 		}

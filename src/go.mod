@@ -1,6 +1,7 @@
 module golanglearning
 
 require (
+	github.com/google/go-querystring v1.0.0 // indirect
 	github.com/qasemt/avardstock v0.0.0
 	github.com/qasemt/binance v0.0.0
 	github.com/qasemt/helper v0.0.0

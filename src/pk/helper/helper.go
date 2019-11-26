@@ -174,7 +174,13 @@ func GetJson(url_path string, target_object_json interface{}) error {
 		}
 
 	} else {
-		myClient = &http.Client{Timeout: 60 * time.Second}
+		var myTransport http.RoundTripper = &http.Transport{
+			Proxy:                 http.ProxyFromEnvironment,
+			ResponseHeaderTimeout: time.Second * 45,
+		}
+
+		//myClient = &http.Client{Timeout: 120 * time.Second}
+		myClient = &http.Client{Transport: myTransport}
 	}
 
 	r, err := myClient.Get(url_path)
@@ -194,7 +200,27 @@ func GetJson(url_path string, target_object_json interface{}) error {
 	return err
 	//return json.NewDecoder(r.Body).Decode(target)
 }
+func GetJsonBin(url_path string, target_object_json interface{}) error {
 
+c:=	 &client{
+		window: 5000,
+		apikey: "",
+		secret: "",
+		client: http.DefaultClient,
+	}
+	res, err := c.do(http.MethodGet,url_path, nil, false, false)
+
+	if err != nil {
+		return  err
+	}
+
+	err1 :=json.Unmarshal(res, &target_object_json)
+	if err1!=nil{
+		return err1
+	}
+
+	return nil
+}
 func OutToCSVFile(items []StockItem, dir_path string, dst_file_csv string, is_add_header bool) bool {
 
 	if _, err := os.Stat(dir_path); os.IsNotExist(err) {
