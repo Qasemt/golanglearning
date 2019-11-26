@@ -15,6 +15,21 @@
 //         "usePlaceholders": true // add parameter placeholders when completing a function
 //     },
 //     "files.eol": "\n", // formatting only supports LF line endings    
+"go.languageServerExperimentalFeatures": {
+  "format": true,
+  "autoComplete": true,
+  "rename": true,
+  "goToDefinition": true,
+  "hover": true,
+  "signatureHelp": true,
+  "goToTypeDefinition": true,
+  "goToImplementation": true,
+  "documentSymbols": true,
+  "workspaceSymbols": true,
+  "findReferences": true,
+  "diagnostics": true,
+  "documentLink": true
+},
     "go.toolsEnvVars": {
         "GO111MODULE": "on",
         
