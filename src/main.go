@@ -214,10 +214,13 @@ func commands(a []string) error {
 	}
 	return nil
 }
-
+type ServerTime struct {
+	ServerTime uint64 `json:"serverTime"`
+}
 func main() {
 	//avardSync()
-	//
+	//serverTime := &ServerTime{}
+	//h.GetJsonBin("",serverTime)
 	e := commands(os.Args[1:])
 
 	if e != nil {
