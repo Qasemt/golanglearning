@@ -5,6 +5,7 @@ go 1.13
 require (
 	github.com/alexkohler/nakedret v0.0.0-20190321114339-98ae56e4e0f3 // indirect
 	github.com/gordonklaus/ineffassign v0.0.0-20190601041439-ed7b1b5ee0f8 // indirect
+	github.com/jinzhu/gorm v1.9.11 // indirect
 	github.com/kisielk/errcheck v1.2.0 // indirect
 	github.com/mdempsky/maligned v0.0.0-20180708014732-6e39bd26a8c8 // indirect
 	github.com/mdempsky/unconvert v0.0.0-20190921185256-3ecd357795af // indirect
