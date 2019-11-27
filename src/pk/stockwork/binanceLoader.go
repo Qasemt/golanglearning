@@ -13,13 +13,7 @@ import (
 
 )
 
-
-
-
 var cacheLastCandel = "lastcandel"
-
-
-
 func floatFromString(raw interface{}) (float64, error) {
 	str, ok := raw.(string)
 	if !ok {
@@ -53,9 +47,6 @@ func timeFromUnixTimestampFloat(raw interface{}) (time.Time, error) {
 	}
 	return time.Unix(0, int64(ts)*int64(time.Millisecond)), nil
 }
-
-
-
 func GetAsset(assetName string, start time.Time, end time.Time, timeframe ETimeFrame) error {
 
 	rawKlines := [][]interface{}{}
@@ -105,7 +96,7 @@ func GetAsset(assetName string, start time.Time, end time.Time, timeframe ETimeF
 		}
 
 		fmt.Printf(">>> %v %v %v \n", assetName, timeframe.ToString(), TimeToString(item.Begin, "yyyy-mm-dd"))
-		err := GetJsonBin("api/v1/klines?symbol="+assetName+"&interval="+timeframe.ToString()+"&startTime="+start_str+"&endTime="+end_str, &rawKlines)
+		err := GetJsonBin("api/v3/klines?symbol="+assetName+"&interval="+timeframe.ToString()+"&startTime="+start_str+"&endTime="+end_str, &rawKlines)
 		if err != nil {
 			return err
 		}
@@ -185,7 +176,7 @@ func GetAssetCreateLastCandel(assetName string, end time.Time, timeframe ETimeFr
 	start_str := strconv.FormatInt(UnixMilli(item.Begin), 10)
 	end_str := strconv.FormatInt(UnixMilli(item.End), 10)
 
-	err := GetJsonBin("api/v1/klines?symbol="+assetName+"&interval=1m&startTime="+start_str+"&endTime="+end_str, &rawKlines)
+	err := GetJsonBin("api/v3/klines?symbol="+assetName+"&interval=1m&startTime="+start_str+"&endTime="+end_str, &rawKlines)
 	if err != nil {
 		return err
 	}
@@ -223,8 +214,8 @@ func GetAssetCreateLastCandel(assetName string, end time.Time, timeframe ETimeFr
 		var f = items_final[0]
 		var l = items_final[len(items_final)-1]
 		var candel StockItem
-		candel.D = f.D
-		candel.T = f.T
+		candel.D = l.D
+		candel.T = l.T
 
 		candel.O = f.O
 		candel.H = f.H
@@ -243,9 +234,7 @@ func GetAssetCreateLastCandel(assetName string, end time.Time, timeframe ETimeFr
 
 	return nil
 }
-
 var global_rawKlines = [][]interface{}{}
-
 func GetAssetYear(asset_name string, start time.Time, end time.Time, timeframe ETimeFrame) error {
 
 	rawKlines := [][]interface{}{}
@@ -293,7 +282,7 @@ func GetAssetYear(asset_name string, start time.Time, end time.Time, timeframe E
 		}
 		fmt.Printf(">>> %v %v %v \n", asset_name, timeframe.ToString(), TimeToString(item.Begin, "yyyy-mm-dd"))
 
-		err := GetJsonBin("api/v1/klines?symbol="+asset_name+"&interval="+timeframe.ToString()+"&startTime="+start_str+"&endTime="+end_str, &rawKlines)
+		err := GetJsonBin("api/v3/klines?symbol="+asset_name+"&interval="+timeframe.ToString()+"&startTime="+start_str+"&endTime="+end_str, &rawKlines)
 		if err != nil {
 			return err
 		}
@@ -337,8 +326,6 @@ func GetAssetYear(asset_name string, start time.Time, end time.Time, timeframe E
 
 	return nil
 }
-
-
 func Make(asset string) error {
 	//:::::::::::::::::::::::::::::::::::::::: CRYPTO
 

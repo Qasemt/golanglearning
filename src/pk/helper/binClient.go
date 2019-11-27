@@ -16,8 +16,8 @@ const (
 	wsAddress = "wss://stream.binance.com:9443/ws/"
 )
 
-// client represents the actual HTTP client, that is being used to interact with binance API server
-type client struct {
+// ClientHelper represents the actual HTTP ClientHelper, that is being used to interact with binance API server
+type ClientHelper struct {
 	apikey string
 	secret string
 	client *http.Client
@@ -27,7 +27,7 @@ type client struct {
 // do invokes the given API command with the given data
 // sign indicates whether the api call should be done with signed payload
 // stream indicates if the request is stream related
-func (c *client) do(method, endpoint string, data interface{}, sign bool, stream bool) (response []byte, err error) {
+func (c *ClientHelper) do(method, endpoint string, data interface{}, sign bool, stream bool) (response []byte, err error) {
 	// Convert the given data to urlencoded format
 	values, err := query.Values(data)
 	if err != nil {

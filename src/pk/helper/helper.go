@@ -19,10 +19,13 @@ import (
 )
 
 var url_proxy string
+var _apikey string
+var _secret string
+
 var is_Socks bool
 var mRootCachePath string
 
-//::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+//:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::: set
 func SetProxy(v string, is_socks bool) error {
 
 	/*_, err := url.Parse(v)
@@ -34,22 +37,36 @@ func SetProxy(v string, is_socks bool) error {
 	is_Socks = is_socks
 	return nil
 }
+func SetSecret (v string){
+	_secret =v
+}
+func SetAPIKey (v string){
+	_apikey =v
+}
+func SetRootCache(p string) {
+	mRootCachePath = p
+}
+//:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::: get
 func GetRootCache() string {
 	if mRootCachePath == "" {
 		mRootCachePath = "./d/"
 	}
 	return mRootCachePath
 }
-func SetRootCache(p string) {
-	mRootCachePath = p
-}
 func GetProxy() string {
 	return url_proxy
 }
+func GetSecret() string {
+	return _secret
+}
+func GetAPIKey() string  {
+	return  _apikey
+}
+
+//_______________________________________________________________________
 func UnixMilli(t time.Time) int64 {
 	return t.Round(time.Millisecond).UnixNano() / (int64(time.Millisecond) / int64(time.Nanosecond))
 }
-
 func UnixTimeToTime(millis int64) time.Time {
 	//return time.Unix(0, millis*int64(time.Millisecond))
 	tm := time.Unix(millis, 0)
@@ -202,10 +219,10 @@ func GetJson(url_path string, target_object_json interface{}) error {
 }
 func GetJsonBin(url_path string, target_object_json interface{}) error {
 
-c:=	 &client{
+c:=	 &ClientHelper{
 		window: 5000,
-		apikey: "",
-		secret: "",
+		apikey: GetAPIKey(),
+		secret: GetSecret(),
 		client: http.DefaultClient,
 	}
 	res, err := c.do(http.MethodGet,url_path, nil, false, false)

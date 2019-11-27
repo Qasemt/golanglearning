@@ -70,7 +70,7 @@ func downloadAsset(assetCode string, isIndex bool, item TimeRange, timefram ETim
 	}
 
 	if _rawKlines == nil {
-		return nil, errors.New("downloadAsset failed ... binance block link")
+		return nil, errors.New("downloadAsset failed ...")
 	}
 
 	for _, k := range raws {

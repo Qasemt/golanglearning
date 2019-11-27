@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 )
-
+//::::::::::::::::::::::::::::: STRUCT
 type StockItem struct {
 	D string
 	T string
@@ -18,10 +18,20 @@ type StockItem struct {
 	BV float64
 }
 
-//:::::::::::::::::::::::::::::
+type TimeRange struct {
+	File_name string
+	Begin     time.Time
+	End       time.Time
+}
+//::::::::::::::::::::::::::::: ENUM
 type ETimeFrame int
 type ETypeChart int
+type EProvider int
 
+const (
+	Binance EProvider =1
+	Avard   EProvider =2
+)
 const (
 	M1  ETimeFrame = 1
 	M15 ETimeFrame = 15
@@ -34,6 +44,7 @@ const (
 	Normal ETypeChart = 0
 	Adj    ETypeChart = 1
 )
+//::::::::::::::::::::::::::::: ENUM TO STRING
 
 func (e ETypeChart) ToTypeChartStr() string {
 	switch e {
@@ -56,11 +67,7 @@ func (e ETypeChart) ToString() string {
 	}
 }
 
-type TimeRange struct {
-	File_name string
-	Begin     time.Time
-	End       time.Time
-}
+
 func (e ETimeFrame) ToString2() string {
 	switch e {
 	case M1:
@@ -118,4 +125,4 @@ func (e ETimeFrame) ToMinuth() int {
 	return 0
 }
 
-//:::::::::::::::::::::::::::::
+

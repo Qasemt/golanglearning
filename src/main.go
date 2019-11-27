@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	av "github.com/qasemt/avardstock"
-	b "github.com/qasemt/binance"
 	h "github.com/qasemt/helper"
 	st "github.com/qasemt/stockwork"
 	"os"
@@ -19,7 +18,7 @@ func init() {
 	fmt.Printf(appIniStr + "\n")
 	//err := h.SetProxy("127.0.0.1:9150", true)
 	//err := h.SetProxy("https://127.0.0.1:5051", false) // psiphon
-/*	if err != nil {
+	/*	if err != nil {
 		return
 	}*/
 }
@@ -48,15 +47,6 @@ func init() {
 	}
 
 }*/
-func binanceV2() {
-	f := b.MakeCacheHourly("BTCUSDT", h.M15, h.H1, time.Duration(time.Hour*24*1), time.Now())
-	fmt.Println(f)
-
-	s := b.MakeCacheBase15M("BTCUSDT", time.Duration(time.Hour*24*10), time.Now())
-
-	fmt.Println(s)
-
-}
 func testFunction() {
 	//testFunctions.RunTest()
 	//testFunctions.RunTestInterface()
@@ -128,35 +118,51 @@ func avardMainProcess(readfromLast bool) error {
 	wg.Wait()
 	return nil
 }
+func readArgs(a []string, key string) (string, bool) {
+	for i := 1; i < len(a); i++ {
+		if strings.HasPrefix(strings.ToLower(a[i]), key) {
+			p := strings.Split(a[i], "=")[1]
+			p = strings.Trim(p, `"`)
+			return p, true
+			break
+		}
+	}
 
-//OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO
+	return "", false
+}
+
+//___________________________________________________________________
 func commands(a []string) error {
 	if len(a) > 0 && strings.ToLower(a[0]) == "crypto" {
 
-		for i := 1; i < len(a); i++ {
-			if strings.HasPrefix(strings.ToLower(a[i]), "cachepath=") {
-				p := strings.Split(a[i], "=")[1]
-				p = strings.Trim(p, `"`)
-				h.SetRootCache(p)
-				break
+		if v, ok := readArgs(a, "cachepath="); ok {
+			h.SetRootCache(v)
+		}
+		//proxy
+		if v, ok := readArgs(a, "proxy="); ok {
+			isSocks := false
+			if strings.HasPrefix(strings.ToLower(v), "socks5") {
+				isSocks = true
+			}
+			v = strings.Replace(v, "socks5://", "", -1)
+			err := h.SetProxy(v, isSocks)
+			if err != nil {
+				return err
 			}
 		}
+		//secret
+		if v, ok := readArgs(a, "secret="); ok {
+			h.SetSecret(v)
+		}
 
-		for i := 1; i < len(a); i++ {
-			if strings.HasPrefix(strings.ToLower(a[i]), "proxy=") {
-				p := strings.Split(a[i], "=")[1]
-				p = strings.Trim(p, `"`)
-				isSocks :=false
-				if strings.HasPrefix(strings.ToLower(p ), "socks5") {
-					isSocks =true
-				}
-				p = strings.Replace(p, "socks5://","",-1)
-				err := h.SetProxy(p, isSocks)
-				if err != nil {
-					return err
-				}
-				break
-			}
+		//api key
+		if v, ok := readArgs(a, "apikey="); ok {
+			h.SetAPIKey(v)
+		}
+
+
+		if h.GetAPIKey() == "" || h.GetSecret() == "" {
+			return errors.New("please set api key or secret key")
 		}
 
 		if strings.ToLower(a[1]) == "btcusdt" {
@@ -168,14 +174,10 @@ func commands(a []string) error {
 
 	} else if len(a) > 0 && strings.HasPrefix(strings.ToLower(a[0]), "tehran") {
 
-		for i := 1; i < len(a); i++ {
-			if strings.HasPrefix(strings.ToLower(a[i]), "cachepath=") {
-				p := strings.Split(a[1], "=")[1]
-				p = strings.Trim(p, `"`)
-				h.SetRootCache(p)
-				break
-			}
+		if v, ok := readArgs(a, "cachepath="); ok {
+			h.SetRootCache(v)
 		}
+
 		for i := 1; i < len(a); i++ {
 			if strings.HasPrefix(strings.ToLower(a[i]), "-synclist") {
 				var dbLock sync.Mutex
@@ -214,20 +216,12 @@ func commands(a []string) error {
 	}
 	return nil
 }
-type ServerTime struct {
-	ServerTime uint64 `json:"serverTime"`
-}
-func main() {
-	//avardSync()
-	//serverTime := &ServerTime{}
-	//h.GetJsonBin("",serverTime)
-	e := commands(os.Args[1:])
 
+func main() {
+	e := commands(os.Args[1:])
 	if e != nil {
 		fmt.Printf(e.Error())
 		return
 	}
-
 	fmt.Println("finished :)")
-
 }
