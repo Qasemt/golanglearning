@@ -23,11 +23,7 @@ type stocktemp struct {
 	C    float64 `json:"close"`
 	V    float64 `json:"volume"`
 }
-type watchListItem struct {
-	AssetCode string `json:"asset_code"`
-	NameEn    string `json:"nameEn"`
-	IsIndex   bool   `json:"is_index"`
-}
+
 type dbItem struct {
 	db    *gorm.DB
 	p     string
@@ -253,11 +249,13 @@ func Make(wg *sync.WaitGroup, dbLock *sync.Mutex, readfromLast bool, assetCode s
 	}
 	return nil
 }
-func ReadJsonWatchList() ([]watchListItem, error) {
-	var list []watchListItem
+func ReadJsonWatchList() (*WatchListItem, error) {
+	var list WatchListItem
 	watchPath := path.Join(GetRootCache(), "watchList.json")
 	if !IsExist(watchPath) {
-		return nil, errors.New(fmt.Sprintf("watch list not found : %v", watchPath))
+		//return nil, errors.New(fmt.Sprintf("watch list not found : %v", watchPath))
+		fmt.Printf(fmt.Sprintf("watch list not found : %v ,create default Watch list ", watchPath))
+		CreateWatchList(GetRootCache())
 	}
 
 	jsonFile, err := os.Open(watchPath)
@@ -272,7 +270,7 @@ func ReadJsonWatchList() ([]watchListItem, error) {
 	if e != nil {
 		return nil, e
 	}
-	return list, nil
+	return &list, nil
 }
 func SyncStockList(dbLock *sync.Mutex) error {
 

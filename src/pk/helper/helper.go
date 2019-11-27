@@ -86,6 +86,56 @@ func CreateconfigTxtinfo(outPath string) error {
 
 	return nil
 }
+func CreateWatchList(outPath string) error {
+
+	s := path.Join(outPath, "watchList.json")
+	if IsExist(s) {
+		return nil
+	}
+	data := WatchListItem{
+
+		Tehran: []WatchStock{
+			{
+				NameEn:"vaghadir",
+				AssetCode:"66",
+				IsIndex: false,
+			},
+			{
+				NameEn:"Senosa",
+				AssetCode:"425",
+				IsIndex: false,
+			},
+			{
+				NameEn:"sefars",
+				AssetCode:"400",
+				IsIndex: false,
+			},
+			{
+				NameEn:"vanovin",
+				AssetCode:"393",
+				IsIndex: false,
+			},
+
+		},
+
+		Crypto: []WatchStock{
+			{
+				NameEn:"BTCUSDT",
+				AssetCode:"BTCUSDT",
+				IsIndex: false,
+			},
+
+
+		},
+	}
+
+	file, _ := json.MarshalIndent(data, "", " ")
+
+	_ = ioutil.WriteFile(s, file, 0644)
+
+	return nil
+}
+
 func UnixMilli(t time.Time) int64 {
 	return t.Round(time.Millisecond).UnixNano() / (int64(time.Millisecond) / int64(time.Nanosecond))
 }

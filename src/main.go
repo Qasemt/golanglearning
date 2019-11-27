@@ -101,15 +101,16 @@ func avardAssetProcess(parentWaitGroup *sync.WaitGroup, readfromLast bool, asset
 	return nil
 }
 func avardMainProcess(readfromLast bool) error {
+
 	list, e := av.ReadJsonWatchList()
 
 	if e != nil {
 		return errors.New(fmt.Sprintf("config not found "))
 	}
 	var wg sync.WaitGroup
-	wg.Add(len(list))
+	wg.Add(len(list.Tehran))
 
-	for _, g := range list {
+	for _, g := range list.Tehran {
 		go avardAssetProcess(&wg, readfromLast, g.AssetCode, g.NameEn, g.IsIndex)
 		/*	if e != nil {
 			return e
@@ -122,7 +123,7 @@ func readArgs(a []string, key string) (string, bool) {
 	for i := 1; i < len(a); i++ {
 		if strings.HasPrefix(strings.ToLower(a[i]), key) {
 			var p string
-			if strings.HasPrefix(strings.ToLower(a[i]), "=") {
+			if strings.Contains(strings.ToLower(a[i]), "=") {
 				p = strings.Split(a[i], "=")[1]
 				p = strings.Trim(p, `"`)
 			}

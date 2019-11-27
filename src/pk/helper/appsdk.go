@@ -23,6 +23,15 @@ type TimeRange struct {
 	Begin     time.Time
 	End       time.Time
 }
+type WatchStock struct {
+	AssetCode string `json:"asset_code"`
+	NameEn    string `json:"nameEn"`
+	IsIndex   bool   `json:"is_index"`
+}
+type WatchListItem struct {
+	Tehran []WatchStock
+	Crypto []WatchStock
+}
 //::::::::::::::::::::::::::::: ENUM
 type ETimeFrame int
 type ETypeChart int
