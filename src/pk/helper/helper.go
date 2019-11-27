@@ -37,15 +37,16 @@ func SetProxy(v string, is_socks bool) error {
 	is_Socks = is_socks
 	return nil
 }
-func SetSecret (v string){
-	_secret =v
+func SetSecret(v string) {
+	_secret = v
 }
-func SetAPIKey (v string){
-	_apikey =v
+func SetAPIKey(v string) {
+	_apikey = v
 }
 func SetRootCache(p string) {
 	mRootCachePath = p
 }
+
 //:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::: get
 func GetRootCache() string {
 	if mRootCachePath == "" {
@@ -59,11 +60,32 @@ func GetProxy() string {
 func GetSecret() string {
 	return _secret
 }
-func GetAPIKey() string  {
-	return  _apikey
+func GetAPIKey() string {
+	return _apikey
 }
 
-//_______________________________________________________________________
+//_______________________________________________________________________ create File watch list and info dt
+/*txtinfo.inf*/
+func CreateconfigTxtinfo(outPath string) error {
+
+	s := path.Join(outPath, "txtinfo.inf")
+	if IsExist(s) {
+		return nil
+	}
+	f, err := os.Create(s)
+	if err != nil {
+		return err
+	}
+
+	defer f.Close()
+	_, e := f.WriteString("delimit  = ,\r\nskip     =   1\r\ndt       =  1\r\nti       =  2\r\nop       =  3\r\nhi       =  4\r\nlo       =  5\r\ncl       =  6\r\nvol      =  7\r\noi       =  0\r\ndtformat = CCYYMMDD\r\ntiformat = HHMMSS\r\next      = csv\r\ncf       = 4\r\n")
+	if e != nil {
+		return e
+	}
+	f.Sync()
+
+	return nil
+}
 func UnixMilli(t time.Time) int64 {
 	return t.Round(time.Millisecond).UnixNano() / (int64(time.Millisecond) / int64(time.Nanosecond))
 }
@@ -219,20 +241,20 @@ func GetJson(url_path string, target_object_json interface{}) error {
 }
 func GetJsonBin(url_path string, target_object_json interface{}) error {
 
-c:=	 &ClientHelper{
+	c := &ClientHelper{
 		window: 5000,
 		apikey: GetAPIKey(),
 		secret: GetSecret(),
 		client: http.DefaultClient,
 	}
-	res, err := c.do(http.MethodGet,url_path, nil, false, false)
+	res, err := c.do(http.MethodGet, url_path, nil, false, false)
 
 	if err != nil {
-		return  err
+		return err
 	}
 
-	err1 :=json.Unmarshal(res, &target_object_json)
-	if err1!=nil{
+	err1 := json.Unmarshal(res, &target_object_json)
+	if err1 != nil {
 		return err1
 	}
 
@@ -247,10 +269,9 @@ func OutToCSVFile(items []StockItem, dir_path string, dst_file_csv string, is_ad
 		fmt.Println("OutToCSVFile", "dest file name is empty :(")
 		return false
 	}
+
 	var final_out = path.Join(dir_path, dst_file_csv)
-
-	//var s [][]string
-
+	CreateconfigTxtinfo(dir_path)
 	//:::::::::::::::::::::::::::::::::::::
 
 	file, err := os.Create(final_out)

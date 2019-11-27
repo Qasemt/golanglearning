@@ -121,8 +121,11 @@ func avardMainProcess(readfromLast bool) error {
 func readArgs(a []string, key string) (string, bool) {
 	for i := 1; i < len(a); i++ {
 		if strings.HasPrefix(strings.ToLower(a[i]), key) {
-			p := strings.Split(a[i], "=")[1]
-			p = strings.Trim(p, `"`)
+			var p string
+			if strings.HasPrefix(strings.ToLower(a[i]), "=") {
+				p = strings.Split(a[i], "=")[1]
+				p = strings.Trim(p, `"`)
+			}
 			return p, true
 			break
 		}
@@ -160,7 +163,6 @@ func commands(a []string) error {
 			h.SetAPIKey(v)
 		}
 
-
 		if h.GetAPIKey() == "" || h.GetSecret() == "" {
 			return errors.New("please set api key or secret key")
 		}
@@ -171,53 +173,52 @@ func commands(a []string) error {
 				return e
 			}
 		}
+		return nil
+	}
 
-	} else if len(a) > 0 && strings.HasPrefix(strings.ToLower(a[0]), "tehran") {
+	if len(a) > 0 && strings.HasPrefix(strings.ToLower(a[0]), "tehran") {
 
 		if v, ok := readArgs(a, "cachepath="); ok {
 			h.SetRootCache(v)
 		}
 
-		for i := 1; i < len(a); i++ {
-			if strings.HasPrefix(strings.ToLower(a[i]), "-synclist") {
-				var dbLock sync.Mutex
-				e := av.SyncStockList(&dbLock)
-				if e != nil {
-					return errors.New(fmt.Sprintf("tehran failed: %v", e))
-				}
-				return nil
+		if _, ok := readArgs(a, "-synclist"); ok {
+			var dbLock sync.Mutex
+			e := av.SyncStockList(&dbLock)
+			if e != nil {
+				return errors.New(fmt.Sprintf("tehran failed: %v", e))
 			}
+			return nil
 		}
+
 		isreadFromLast := false
-		for i := 1; i < len(a); i++ {
-			if strings.HasPrefix(strings.ToLower(a[i]), "-readfromlast") {
-				isreadFromLast = true
-			}
+		if _, ok := readArgs(a, "-readfromlast"); ok {
+			isreadFromLast = true
 		}
-		for i := 1; i < len(a); i++ {
-			if strings.HasPrefix(strings.ToLower(a[i]), "-stockList") {
-				var dbLock sync.Mutex
-				e := av.OutStockList(&dbLock)
-				if e != nil {
-					return errors.New(fmt.Sprintf("tehran failed: %v", e))
-				}
-				return nil
+
+		if _, ok := readArgs(a, "-stockList"); ok {
+			var dbLock sync.Mutex
+			e := av.OutStockList(&dbLock)
+			if e != nil {
+				return errors.New(fmt.Sprintf("tehran failed: %v", e))
 			}
+			return nil
 		}
 
 		e := avardMainProcess(isreadFromLast)
 		if e != nil {
 			return errors.New(fmt.Sprintf("tehran failed: %v", e))
 		}
-
-	} else {
-		s := fmt.Sprintf("Help args : [crypto] [BTCUSDT]\nHelp args : [tehran] [src dir path ] [dst dir path]")
-		return errors.New(s)
+		return nil
 	}
-	return nil
+
+	s := fmt.Sprintf("Help args : [crypto] [BTCUSDT]\nHelp args : [tehran] [src dir path ] [dst dir path]")
+	return errors.New(s)
+
 }
 
 func main() {
+
 	e := commands(os.Args[1:])
 	if e != nil {
 		fmt.Printf(e.Error())
