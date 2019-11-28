@@ -105,14 +105,39 @@ func GetDateRangeYears(duration time.Duration, end time.Time) []TimeRange {
 	}
 	return day_rang
 }
-func SyncDb(assetCode string, frame ETimeFrame) error {
-	var db *gorm.DB
+func SyncDb(wl *WatchListItem) error {
 
-	db, _, er := DatabaseInit(assetCode, frame.ToString(), db)
-	if er != nil {
-		return er
+	for _, f := range wl.Tehran {
+		var dbnametmp string = f.AssetCode
+		if f.IsIndex{
+			dbnametmp =fmt.Sprintf("%vi",f.AssetCode)
+		}
+
+
+		e := Migrate(dbnametmp)
+		if e != nil {
+			return e
+		}
+
 	}
-	db.Close()
+	//____________
+	for _, f := range wl.Crypto {
+		var dbnametmp string = f.AssetCode
+		if f.IsIndex{
+			dbnametmp =fmt.Sprintf("%ti",f.AssetCode)
+		}
+
+		e := Migrate(dbnametmp)
+		if e != nil {
+			return e
+		}
+
+	}
+	e := Migrate("main")
+	if e != nil {
+		return e
+	}
+	fmt.Println("sync ..... done ")
 	return nil
 }
 func Make(wg *sync.WaitGroup, dbLock *sync.Mutex, readfromLast bool, assetCode string, assetNameEn string, isIndex bool, duration time.Duration, end time.Time, timeFrame ETimeFrame, tc ETypeChart) error {

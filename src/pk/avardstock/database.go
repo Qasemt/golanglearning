@@ -83,17 +83,26 @@ func DatabaseInit(dbName1 string, timefrm string, db1 *gorm.DB) (*gorm.DB, strin
 		}
 	}
 
-	if strings.Contains(fullPath, "main.bin") {
-		if !db1.HasTable(&Nemad{}) {
-			db1.AutoMigrate(&Nemad{})
-		}
-	} else {
-		if !db1.HasTable(&StockFromWebService{}) {
-			db1.AutoMigrate(&StockFromWebService{})
-		}
+	return db1, fullPath, nil
+}
+
+func Migrate(dbName1 string) error {
+
+	var fullPath string
+	var db *gorm.DB
+	defer closeMyDb(db)
+	db, fullPath, er := DatabaseInit(dbName1, "", db)
+
+	if er != nil {
+		return errors.New(fmt.Sprintf("err:%v %v", er, fullPath))
 	}
 
-	return db1, fullPath, nil
+	if strings.Contains(fullPath, "main.bin") {
+			db.AutoMigrate(&Nemad{})
+	} else {
+			db.AutoMigrate(&StockFromWebService{})
+	}
+	return nil
 }
 func InsertStocks(d *gorm.DB, k *sync.Mutex, isIndex bool, stockList []StockFromWebService, assetid string, timeframe h.ETimeFrame, tc h.ETypeChart) error {
 	defer k.Unlock()

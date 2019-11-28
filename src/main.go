@@ -109,7 +109,6 @@ func avardMainProcess(readfromLast bool) error {
 	}
 	var wg sync.WaitGroup
 	wg.Add(len(list.Tehran))
-
 	for _, g := range list.Tehran {
 		go avardAssetProcess(&wg, readfromLast, g.AssetCode, g.NameEn, g.IsIndex)
 		/*	if e != nil {
@@ -219,6 +218,19 @@ func commands(a []string) error {
 }
 
 func main() {
+	list, er := av.ReadJsonWatchList()
+
+	if er != nil {
+		fmt.Printf(fmt.Sprintf("config not found "))
+		return
+	}
+	k := av.SyncDb(list)
+	if k != nil {
+		fmt.Printf("sync db failed.")
+		return
+	}
+
+	//___________________________
 
 	e := commands(os.Args[1:])
 	if e != nil {
