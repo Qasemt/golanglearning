@@ -29,6 +29,8 @@ type WatchStock struct {
 	IsIndex   bool   `json:"is_index"`
 }
 type WatchListItem struct {
+	Apikey string
+	Secret string
 	Tehran []WatchStock
 	Crypto []WatchStock
 }

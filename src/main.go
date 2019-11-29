@@ -136,6 +136,8 @@ func readArgs(a []string, key string) (string, bool) {
 
 //___________________________________________________________________
 func commands(a []string) error {
+
+
 	if len(a) > 0 && strings.ToLower(a[0]) == "crypto" {
 
 		if v, ok := readArgs(a, "cachepath="); ok {
@@ -153,15 +155,19 @@ func commands(a []string) error {
 				return err
 			}
 		}
-		//secret
-		if v, ok := readArgs(a, "secret="); ok {
-			h.SetSecret(v)
-		}
 
-		//api key
-		if v, ok := readArgs(a, "apikey="); ok {
-			h.SetAPIKey(v)
+
+		//0000000000000
+		list, er := av.ReadJsonWatchList()
+		if er != nil {
+			return errors.New(fmt.Sprintf("config not found "))
 		}
+		k := av.SyncDb(list)
+		if k != nil {
+			return errors.New(fmt.Sprintf("sync db failed."))
+		}
+		h.SetSecret(list.Apikey)
+		h.SetAPIKey(list.Secret)
 
 		if h.GetAPIKey() == "" || h.GetSecret() == "" {
 			return errors.New("please set api key or secret key")
@@ -204,6 +210,15 @@ func commands(a []string) error {
 			}
 			return nil
 		}
+		//0000000000000
+		list, er := av.ReadJsonWatchList()
+		if er != nil {
+			return errors.New(fmt.Sprintf("config not found "))
+		}
+		k := av.SyncDb(list)
+		if k != nil {
+			return errors.New(fmt.Sprintf("sync db failed."))
+		}
 
 		e := avardMainProcess(isreadFromLast)
 		if e != nil {
@@ -218,19 +233,6 @@ func commands(a []string) error {
 }
 
 func main() {
-	list, er := av.ReadJsonWatchList()
-
-	if er != nil {
-		fmt.Printf(fmt.Sprintf("config not found "))
-		return
-	}
-	k := av.SyncDb(list)
-	if k != nil {
-		fmt.Printf("sync db failed.")
-		return
-	}
-
-	//___________________________
 
 	e := commands(os.Args[1:])
 	if e != nil {

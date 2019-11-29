@@ -1,0 +1,1 @@
+go build -o stockloader.exe -ldflags "-s -w"
