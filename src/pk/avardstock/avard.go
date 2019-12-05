@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/jinzhu/gorm"
 	. "github.com/qasemt/helper"
+
 	"io/ioutil"
 	"os"
 	"path"
@@ -14,6 +15,28 @@ import (
 	"sync"
 	"time"
 )
+
+func floatFromString(raw interface{}) (float64, error) {
+	str, ok := raw.(string)
+	if !ok {
+		//	return 0, error(fmt.Sprintf("unable to parse, value not string: %T", raw))
+		return 0, nil
+	}
+	flt, err := strconv.ParseFloat(str, 64)
+	if err != nil {
+		//	return 0, errors.Wrap(err, fmt.Sprintf("unable to parse as float: %s", str))
+		return 0, nil
+
+	}
+	return flt, nil
+}
+func timeFromUnixTimestampFloat(raw interface{}) (time.Time, error) {
+	ts, ok := raw.(float64)
+	if !ok {
+		return time.Time{}, nil
+	}
+	return time.Unix(0, int64(ts)*int64(time.Millisecond)), nil
+}
 
 type stocktemp struct {
 	Time float64 ` json:"time"`
@@ -29,37 +52,76 @@ type dbItem struct {
 	p     string
 	mutex *sync.Mutex
 }
+type IStockProvider interface {
+	make(sq StockQuery) error
+	downloadAsset(sq StockQuery, item TimeRange) ([]StockFromWebService, error)
+	/*
+		closeMyDb(d *gorm.DB)
+		getDateRangeYears(duration time.Duration, end time.Time) []TimeRange
+		SyncDb(wl *WatchListItem) error
+		ReadJsonWatchList() (*WatchListItem, error)
+		SyncStockList(dbLock *sync.Mutex) error
+		OutStockList(dbLock *sync.Mutex)
+		avardAssetProcess(parentWaitGroup *sync.WaitGroup, readFromLast bool, assetCode string, nameEn string, isIndex bool, provider EProvider) error
 
-//var lockeList []dbItem
+	*/
+	Run(readfromLast bool) error
+}
+type StockProvider struct {
+	IStockProvider
+	Provider EProvider
+}
+type TehranLoader struct {
+	StockProvider
+}
+type BinanceLoader struct {
+	StockProvider
+}
 
-func downloadAsset(assetCode string, isIndex bool, item TimeRange, timefram ETimeFrame, tc ETypeChart) ([]StockFromWebService, error) {
+//::::::::::::::::::::::::::::::::::::
+func NewTehran() *TehranLoader {
+	t := TehranLoader{StockProvider{}}
+
+	t.StockProvider.IStockProvider = &t
+	t.Provider = Avard
+	return &t
+}
+func NewBinance() *BinanceLoader {
+	t := BinanceLoader{StockProvider{}}
+
+	t.StockProvider.IStockProvider = &t
+	t.Provider = Binance
+	return &t
+}
+
+func (a TehranLoader) downloadAsset(sq StockQuery, item TimeRange) ([]StockFromWebService, error) {
 	var _rawKlines = []StockFromWebService{}
 	startStr := strconv.FormatInt(item.Begin.Unix(), 10)
 	endStr := strconv.FormatInt(item.End.Unix(), 10)
 	var frame string
-	if timefram == D1 {
+	if sq.TimeFrame == D1 {
 		frame = "D"
-	} else if timefram == M15 {
+	} else if sq.TimeFrame == M15 {
 		frame = "15"
-	} else if timefram == H1 {
+	} else if sq.TimeFrame == H1 {
 		frame = "60"
-	} else if timefram == H2 {
+	} else if sq.TimeFrame == H2 {
 		frame = "120"
-	} else if timefram == H4 {
+	} else if sq.TimeFrame == H4 {
 		frame = "240"
 	}
 	var typechart string = ""
 	var isAssetStr string = "asset" //asset / index
-	if tc == Adj {
+	if sq.TypeChart == Adj {
 		typechart = "%3Atype1"
 	}
-	if isIndex == true {
+	if sq.IsIndex == true {
 		isAssetStr = "index"
 	}
 	//var raws []interface{}
 	var raws []stocktemp
 	var itemsFinal []StockFromWebService
-	err := GetJson("https://rahavard365.com/api/chart/bars?ticker=exchange."+isAssetStr+"%3A"+assetCode+"%3Areal_close"+typechart+"&resolution="+frame+"&startDateTime="+startStr+"&endDateTime="+endStr+"&firstDataRequest=true", &raws)
+	err := GetJson("https://rahavard365.com/api/chart/bars?ticker=exchange."+isAssetStr+"%3A"+sq.AssetCode+"%3Areal_close"+typechart+"&resolution="+frame+"&startDateTime="+startStr+"&endDateTime="+endStr+"&firstDataRequest=true", &raws)
 
 	if err != nil {
 		return nil, err
@@ -83,66 +145,52 @@ func downloadAsset(assetCode string, isIndex bool, item TimeRange, timefram ETim
 
 	return itemsFinal, nil
 }
-func closeMyDb(d *gorm.DB) {
-	if d != nil {
-		(*d).Close()
+func (a BinanceLoader) downloadAsset(sq StockQuery, item TimeRange) ([]StockFromWebService, error) {
+	var _rawKlines = []StockFromWebService{}
+	startStr := strconv.FormatInt(UnixMilli(item.Begin), 10)
+	endStr := strconv.FormatInt(UnixMilli(item.End), 10)
+	rawKlines := [][]interface{}{}
+	var itemsFinal []StockFromWebService
+	err := GetJsonBin("api/v3/klines?symbol="+sq.AssetCode+"&interval="+sq.TimeFrame.ToString()+"&startTime="+startStr+"&endTime="+endStr, &rawKlines)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if _rawKlines == nil {
+		return nil, errors.New("downloadAsset failed ...")
+	}
+
+	for _, k := range rawKlines {
+		var v StockFromWebService
+		ts, _ := k[0].(float64)
+		v.Time = int64(ts)
+		open, _ := floatFromString(k[1])
+		v.O = open
+
+		high, _ := floatFromString(k[2])
+		v.H = high
+
+		low1, _ := floatFromString(k[3])
+		v.L = low1
+
+		close, _ := floatFromString(k[4])
+		v.C = close
+
+		volume, _ := floatFromString(k[5])
+		v.V = volume
+
+		itemsFinal = append(itemsFinal, v)
 
 	}
+
+	return itemsFinal, nil
 }
-func GetDateRangeYears(duration time.Duration, end time.Time) []TimeRange {
-	day_rang := []TimeRange{}
-	start := end.Add(duration)
-	diff := end.Sub(start).Hours() / 8760 //8760 hour = years
-	diff = diff + 1
-	for i := 0; i <= int(diff); i++ {
-		var tt = start.AddDate(i, 0, 0)
-		var d1 TimeRange
-		d1.File_name = TimeToString(tt, "yyyymmdd") + ".csv"
-		y, _, _ := tt.Date()
-		d1.Begin = time.Date(y, 1, 1, 0, 0, 0, 0, tt.Location())
-		d1.End = time.Date(y, 12, 31, 23, 59, 59, int(time.Second-time.Nanosecond), tt.Location())
-		day_rang = append(day_rang, d1)
-	}
-	return day_rang
-}
-func SyncDb(wl *WatchListItem) error {
 
-	for _, f := range wl.Tehran {
-		var dbnametmp string = f.AssetCode
-		if f.IsIndex{
-			dbnametmp =fmt.Sprintf("%vi",f.AssetCode)
-		}
+//::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+func (a StockProvider) make(sq StockQuery) error {
 
-
-		e := Migrate(dbnametmp)
-		if e != nil {
-			return e
-		}
-
-	}
-	//____________
-	for _, f := range wl.Crypto {
-		var dbnametmp string = f.AssetCode
-		if f.IsIndex{
-			dbnametmp =fmt.Sprintf("%ti",f.AssetCode)
-		}
-
-		e := Migrate(dbnametmp)
-		if e != nil {
-			return e
-		}
-
-	}
-	e := Migrate("main")
-	if e != nil {
-		return e
-	}
-	fmt.Println("sync ..... done ")
-	return nil
-}
-func Make(wg *sync.WaitGroup, dbLock *sync.Mutex, readfromLast bool, assetCode string, assetNameEn string, isIndex bool, duration time.Duration, end time.Time, timeFrame ETimeFrame, tc ETypeChart) error {
-
-	defer wg.Done()
+	defer sq.WaitGroupobj.Done()
 
 	var db *gorm.DB
 	var fullPath string
@@ -160,11 +208,11 @@ func Make(wg *sync.WaitGroup, dbLock *sync.Mutex, readfromLast bool, assetCode s
 		V:         0,
 	}
 
-	var dbname string = assetCode
-	if isIndex {
-		dbname = fmt.Sprintf("%si", assetCode)
+	var dbname string = sq.AssetCode
+	if sq.IsIndex {
+		dbname = fmt.Sprintf("%si", sq.AssetCode)
 	}
-	db, fullPath, er := DatabaseInit(dbname, timeFrame.ToString(), db)
+	db, fullPath, er := DatabaseInit(dbname, sq.TimeFrame.ToString(), db)
 	if er != nil {
 		return errors.New(fmt.Sprintf("err:%v %v", er, fullPath))
 	}
@@ -183,20 +231,20 @@ func Make(wg *sync.WaitGroup, dbLock *sync.Mutex, readfromLast bool, assetCode s
 			lockeList = append(lockeList, dbItem{db: db, p: fullPath, mutex: dbLock})
 		}*/
 
-	defer closeMyDb(db)
+	defer a.closeMyDb(db)
 
 	//::::::::::::::::::::::::::::::::::::::::: Get LOOP FROM WEB SERVICE
 	var times []TimeRange
 	var it = TimeRange{}
 	//var itemsFinal []StockItem
-	if readfromLast {
+	if sq.ReadfromLast {
 		//::::::::::::::::::::::::::::::::::::::::: Get LAst RECORD FROM DATABASE
-		e := getLastRecord(db, dbLock, assetCode, timeFrame.ToMinuth(), tc, &last)
+		e := getLastRecord(db, sq.DBLock, sq.AssetCode, sq.TimeFrame.ToMinuth(), sq.TypeChart, &last)
 		if e != nil {
 			return e
 		}
 		if last.ID == 0 {
-			it.Begin = end.Add(duration)
+			it.Begin = sq.EndTime.Add(sq.Duration)
 		} else {
 			//it.Begin = time.Unix(0, int64(last.Time)*int64(time.Millisecond))
 			if last.Time == 0 {
@@ -204,28 +252,46 @@ func Make(wg *sync.WaitGroup, dbLock *sync.Mutex, readfromLast bool, assetCode s
 			}
 			it.Begin = time.Unix(0, last.Time*int64(time.Millisecond))
 		}
-		it.End = end
+		it.End = sq.EndTime
 		times = append(times, it)
 	} else
 	{
-		t := GetDateRangeYears(duration, end)
+		t := a.getDateRangeYears(sq.Duration, sq.EndTime)
 		times = append(times, t...)
 	}
 
 	var itemsRaws []StockFromWebService
-	for _, h := range times {
-		raws, e := downloadAsset(assetCode, isIndex, h, timeFrame, tc)
-		if e != nil {
-			return e
+	if a.Provider == Avard {
+		for _, h := range times {
+			raws, e := a.downloadAsset(sq, h)
+			if e != nil {
+				return e
+			}
+			itemsRaws = append(itemsRaws, raws...)
 		}
-		itemsRaws = append(itemsRaws, raws...)
+
+	} else if a.Provider == Binance {
+		for _, h := range times {
+		l:=	a.getDateRange1(h.Begin,h.End,sq.TimeFrame)
+
+			for _, h1 := range l {
+				raws, e := a.downloadAsset(sq, h1)
+				if e != nil {
+					return e
+				}
+				itemsRaws = append(itemsRaws, raws...)
+			}
+
+		}
+	} else {
+		return errors.New("no selected")
 	}
 
 	//::::::::::::::::::::::::::::::::::::::::: INSERT TO DATABASE
 	{
-		fmt.Println("Type", tc.ToTypeChartStr(), "asset ", assetNameEn, "time frame ", timeFrame.ToString(), "load from net : ", len(itemsRaws))
+		fmt.Println(a.Provider.ToString(), "->", "Type", sq.TypeChart.ToTypeChartStr(), "asset ", sq.AssetNameEn, "time frame ", sq.TimeFrame.ToString(), "load from net : ", len(itemsRaws))
 		if len(itemsRaws) > 0 {
-			InsertStocks(db, dbLock, isIndex, itemsRaws, assetCode, timeFrame, tc)
+			InsertStocks(db, sq.DBLock, sq.IsIndex, itemsRaws, sq.AssetCode, sq.TimeFrame, sq.TypeChart)
 			//if err != nil {
 			//	return errors.New(fmt.Sprintf("Insert Stocks is fialed: %v ",err))
 			//}
@@ -233,7 +299,7 @@ func Make(wg *sync.WaitGroup, dbLock *sync.Mutex, readfromLast bool, assetCode s
 	}
 	//::::::::::::::::::::::::::::::::::::::::: LOAD FROM DATABASE AND OUT TO CSV
 	{
-		itemsRaw, err := getRecordesStock(db, dbLock, assetCode, timeFrame, tc)
+		itemsRaw, err := getRecordesStock(db, sq.DBLock, sq.AssetCode, sq.TimeFrame, sq.TypeChart)
 		if err != nil {
 			return errors.New(fmt.Sprintf("get Stocks is failed: %v ", err))
 		}
@@ -254,16 +320,26 @@ func Make(wg *sync.WaitGroup, dbLock *sync.Mutex, readfromLast bool, assetCode s
 
 		if len(itemsFinal) > 0 {
 			var dirCachePath string
-			if tc == Normal {
-				dirCachePath = path.Join(GetRootCache(), "tehran", "normal", timeFrame.ToString())
-			} else {
-				dirCachePath = path.Join(GetRootCache(), "tehran", "Adjusted", timeFrame.ToString())
-			}
 			var fileName string = ""
-			if tc == Normal {
-				fileName = fmt.Sprintf("%v_%v.csv", assetNameEn, strings.ToLower(timeFrame.ToString2()))
-			} else {
-				fileName = fmt.Sprintf("%v_%v_%v.csv", assetNameEn, strings.ToLower(timeFrame.ToString2()), "a")
+			switch a.Provider {
+			case Avard:
+				{
+					if sq.TypeChart == Normal {
+						dirCachePath = path.Join(GetRootCache(), "tehran", "normal", sq.TimeFrame.ToString())
+					} else {
+						dirCachePath = path.Join(GetRootCache(), "tehran", "Adjusted", sq.TimeFrame.ToString())
+					}
+					if sq.TypeChart == Normal {
+						fileName = fmt.Sprintf("%v_%v.csv", sq.AssetNameEn, strings.ToLower(sq.TimeFrame.ToString2()))
+					} else {
+						fileName = fmt.Sprintf("%v_%v_%v.csv", sq.AssetNameEn, strings.ToLower(sq.TimeFrame.ToString2()), "a")
+					}
+				}
+			case Binance:
+				{
+					dirCachePath = path.Join(GetRootCache(), "crypto", sq.AssetCode)
+					fileName = fmt.Sprintf("%v_%v.csv", strings.ToLower(sq.AssetCode), strings.ToLower(sq.TimeFrame.ToString2()))
+				}
 			}
 
 			if !OutToCSVFile(itemsFinal, dirCachePath, fileName, true) {
@@ -274,7 +350,100 @@ func Make(wg *sync.WaitGroup, dbLock *sync.Mutex, readfromLast bool, assetCode s
 	}
 	return nil
 }
-func ReadJsonWatchList() (*WatchListItem, error) {
+
+func (a StockProvider) closeMyDb(d *gorm.DB) {
+	if d != nil {
+		(*d).Close()
+
+	}
+}
+func (a StockProvider) getDateRangeYears(duration time.Duration, end time.Time) []TimeRange {
+	day_rang := []TimeRange{}
+	start := end.Add(duration)
+	diff := end.Sub(start).Hours() / 8760 //8760 hour = years
+	diff = diff + 1
+	for i := 0; i <= int(diff); i++ {
+		var tt = start.AddDate(i, 0, 0)
+		var d1 TimeRange
+		d1.File_name = TimeToString(tt, "yyyymmdd") + ".csv"
+		y, _, _ := tt.Date()
+		d1.Begin = time.Date(y, 1, 1, 0, 0, 0, 0, tt.Location())
+		d1.End = time.Date(y, 12, 31, 23, 59, 59, int(time.Second-time.Nanosecond), tt.Location())
+		day_rang = append(day_rang, d1)
+	}
+	return day_rang
+}
+func (a StockProvider) getDateRange1(start time.Time, end time.Time, frame ETimeFrame) []TimeRange {
+	day_rang := []TimeRange{}
+	var diff float64
+	if frame != D1 {
+		diff = end.Sub(start).Hours() / 500 //8760 hour = years
+		diff = diff + 1
+	} else {
+		diff := end.Sub(start).Hours() / 8760 //8760 hour = years
+		diff = diff + 1
+	}
+	var t1 time.Time
+	var t2 time.Time
+
+	for i := 0; i <= int(diff); i++ {
+		if i == 0 {
+			t1 = start
+		} else {
+			t1 = t2
+		}
+
+		t2 = t1.Add(time.Hour * time.Duration(500))
+
+		var d1 TimeRange
+		d1.File_name = TimeToString(t1, "yyyymmdd") + ".csv"
+		d1.Begin = t1
+		d1.End =t2;
+		day_rang = append(day_rang, d1)
+	}
+	return day_rang
+}
+
+/*func (a StockProvider) make(sq StockQuery) error {
+	return a.make(sq);
+}*/
+//::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+
+func (a StockProvider) SyncDb(wl *WatchListItem) error {
+
+	for _, f := range wl.Tehran {
+		var dbnametmp string = f.AssetCode
+		if f.IsIndex {
+			dbnametmp = fmt.Sprintf("%vi", f.AssetCode)
+		}
+
+		e := Migrate(dbnametmp, &a)
+		if e != nil {
+			return e
+		}
+
+	}
+	//____________
+	for _, f := range wl.Crypto {
+		var dbnametmp string = f.AssetCode
+		if f.IsIndex {
+			dbnametmp = fmt.Sprintf("%ti", f.AssetCode)
+		}
+
+		e := Migrate(dbnametmp, &a)
+		if e != nil {
+			return e
+		}
+
+	}
+	e := Migrate("main", &a)
+	if e != nil {
+		return e
+	}
+	fmt.Println("sync ..... done ")
+	return nil
+}
+func (a StockProvider) ReadJsonWatchList() (*WatchListItem, error) {
 	var list WatchListItem
 	watchPath := path.Join(GetRootCache(), "watchList.json")
 	if !IsExist(watchPath) {
@@ -297,7 +466,7 @@ func ReadJsonWatchList() (*WatchListItem, error) {
 	}
 	return &list, nil
 }
-func SyncStockList(dbLock *sync.Mutex) error {
+func (a StockProvider) SyncStockList(dbLock *sync.Mutex) error {
 
 	var db1 *gorm.DB
 	//var fullPath string
@@ -373,7 +542,82 @@ func SyncStockList(dbLock *sync.Mutex) error {
 
 	return nil
 }
+func (a StockProvider) OutStockList(dbLock *sync.Mutex) error {
+	return nil
+}
 
-func OutStockList(dbLock *sync.Mutex) error {
+//::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+func (a StockProvider) avardAssetProcess(parentWaitGroup *sync.WaitGroup, readFromLast bool, assetCode string, nameEn string, isIndex bool) error {
+
+	if nameEn == "" || assetCode == "" {
+		parentWaitGroup.Done()
+		return errors.New("field is empty ")
+
+	}
+	var databaseLock sync.Mutex
+	var wg sync.WaitGroup
+	if a.Provider == Avard {
+
+		if isIndex == true {
+			wg.Add(2)
+		} else {
+			wg.Add(8)
+		}
+
+		go a.make(StockQuery{WaitGroupobj: &wg, DBLock: &databaseLock, ReadfromLast: readFromLast, AssetCode: assetCode, AssetNameEn: nameEn, IsIndex: isIndex, Duration: -time.Duration(time.Hour * 24 * 250), EndTime: time.Now(), TimeFrame: H1, TypeChart: Normal})
+
+		go a.make(StockQuery{WaitGroupobj: &wg, DBLock: &databaseLock, ReadfromLast: readFromLast, AssetCode: assetCode, AssetNameEn: nameEn, IsIndex: isIndex, Duration: -time.Duration(time.Hour * 24 * 400), EndTime: time.Now(), TimeFrame: D1, TypeChart: Normal})
+
+		if isIndex == false {
+			go a.make(StockQuery{WaitGroupobj: &wg, DBLock: &databaseLock, ReadfromLast: readFromLast, AssetCode: assetCode, AssetNameEn: nameEn, IsIndex: isIndex, Duration: -time.Duration(time.Hour * 24 * 250), EndTime: time.Now(), TimeFrame: H2, TypeChart: Normal})
+			go a.make(StockQuery{WaitGroupobj: &wg, DBLock: &databaseLock, ReadfromLast: readFromLast, AssetCode: assetCode, AssetNameEn: nameEn, IsIndex: isIndex, Duration: -time.Duration(time.Hour * 24 * 360), EndTime: time.Now(), TimeFrame: H4, TypeChart: Normal})
+
+			go a.make(StockQuery{WaitGroupobj: &wg, DBLock: &databaseLock, ReadfromLast: readFromLast, AssetCode: assetCode, AssetNameEn: nameEn, IsIndex: isIndex, Duration: -time.Duration(time.Hour * 24 * 250), EndTime: time.Now(), TimeFrame: H1, TypeChart: Adj})
+			go a.make(StockQuery{WaitGroupobj: &wg, DBLock: &databaseLock, ReadfromLast: readFromLast, AssetCode: assetCode, AssetNameEn: nameEn, IsIndex: isIndex, Duration: -time.Duration(time.Hour * 24 * 250), EndTime: time.Now(), TimeFrame: H2, TypeChart: Adj})
+			go a.make(StockQuery{WaitGroupobj: &wg, DBLock: &databaseLock, ReadfromLast: readFromLast, AssetCode: assetCode, AssetNameEn: nameEn, IsIndex: isIndex, Duration: -time.Duration(time.Hour * 24 * 360), EndTime: time.Now(), TimeFrame: H4, TypeChart: Adj})
+			go a.make(StockQuery{WaitGroupobj: &wg, DBLock: &databaseLock, ReadfromLast: readFromLast, AssetCode: assetCode, AssetNameEn: nameEn, IsIndex: isIndex, Duration: -time.Duration(time.Hour * 24 * 400), EndTime: time.Now(), TimeFrame: D1, TypeChart: Adj})
+		}
+	} else if a.Provider == Binance {
+
+		wg.Add(1)
+		//go a.make(StockQuery{WaitGroupobj: &wg, DBLock: &databaseLock, ReadfromLast: readFromLast, AssetCode: assetCode, AssetNameEn: nameEn, IsIndex: false, Duration: -time.Duration(time.Hour * 24 * 250), EndTime: time.Now(), TimeFrame: M15, TypeChart: Normal})
+		go a.make(StockQuery{WaitGroupobj: &wg, DBLock: &databaseLock, ReadfromLast: readFromLast, AssetCode: assetCode, AssetNameEn: nameEn, IsIndex: false, Duration: -time.Duration(time.Hour * 24 * 250), EndTime: time.Now(), TimeFrame: H1, TypeChart: Normal})
+		//	go a.make(StockQuery{WaitGroupobj: &wg, DBLock: &databaseLock, ReadfromLast: readFromLast, AssetCode: assetCode, AssetNameEn: nameEn, IsIndex: false, Duration: -time.Duration(time.Hour * 24 * 250), EndTime: time.Now(), TimeFrame: H2, TypeChart: Normal})
+		//	go a.make(StockQuery{WaitGroupobj: &wg, DBLock: &databaseLock, ReadfromLast: readFromLast, AssetCode: assetCode, AssetNameEn: nameEn, IsIndex: false, Duration: -time.Duration(time.Hour * 24 * 360), EndTime: time.Now(), TimeFrame: H4, TypeChart: Normal})
+		//	go a.make(StockQuery{WaitGroupobj: &wg, DBLock: &databaseLock, ReadfromLast: readFromLast, AssetCode: assetCode, AssetNameEn: nameEn, IsIndex: false, Duration: -time.Duration(time.Hour * 24 * 400), EndTime: time.Now(), TimeFrame: D1, TypeChart: Normal})
+	} else {
+		return errors.New("not selected :( ")
+	}
+	wg.Wait()
+	parentWaitGroup.Done()
+
+	return nil
+}
+func (a StockProvider) Run(readfromLast bool) error {
+
+	list, e := a.ReadJsonWatchList()
+
+	if e != nil {
+		return errors.New(fmt.Sprintf("config not found "))
+	}
+	var wg sync.WaitGroup
+	if a.Provider == Avard {
+		wg.Add(len(list.Tehran))
+		for _, g := range list.Tehran {
+			go a.avardAssetProcess(&wg, readfromLast, g.AssetCode, g.NameEn, g.IsIndex)
+			/*	if e != nil {
+				return e
+			}*/
+		}
+	} else if a.Provider == Binance {
+		wg.Add(len(list.Crypto))
+		for _, g := range list.Crypto {
+			go a.avardAssetProcess(&wg, readfromLast, g.AssetCode, g.NameEn, g.IsIndex)
+			/*	if e != nil {
+				return e
+			}*/
+		}
+	}
+	wg.Wait()
 	return nil
 }

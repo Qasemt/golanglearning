@@ -86,11 +86,11 @@ func DatabaseInit(dbName1 string, timefrm string, db1 *gorm.DB) (*gorm.DB, strin
 	return db1, fullPath, nil
 }
 
-func Migrate(dbName1 string) error {
+func Migrate(dbName1 string,isp  *StockProvider ) error {
 
 	var fullPath string
 	var db *gorm.DB
-	defer closeMyDb(db)
+	defer isp.closeMyDb(db)
 	db, fullPath, er := DatabaseInit(dbName1, "", db)
 
 	if er != nil {

@@ -1,15 +1,16 @@
 package main
 
 import (
+	
 	"errors"
 	"fmt"
 	av "github.com/qasemt/avardstock"
 	h "github.com/qasemt/helper"
 	st "github.com/qasemt/stockwork"
+
 	"os"
 	"strings"
 	"sync"
-	"time"
 )
 
 var appIniStr = "app init"
@@ -69,55 +70,7 @@ func tehranTSEC() {
 	//stockwork.RUNStock("D:/workspace/stock/tseclient/normal/", "D:/out/", false)
 	//stockwork.RUNStock("D:/workspace/stock/tseclient/Adjusted/", "D:/out2/", true)
 }
-func avardAssetProcess(parentWaitGroup *sync.WaitGroup, readfromLast bool, assetCode string, nameEn string, isIndex bool) error {
-	//var id string ="IRO1GDIR0001"
-	if nameEn == "" || assetCode == "" {
-		parentWaitGroup.Done()
-		return errors.New("field is empty ")
 
-	}
-	var databaseLock sync.Mutex
-	var wg sync.WaitGroup
-	if isIndex == true {
-		wg.Add(2)
-	} else {
-		wg.Add(8)
-	}
-
-	go av.Make(&wg, &databaseLock, readfromLast, assetCode, nameEn, isIndex, -time.Duration(time.Hour*24*250), time.Now(), h.H1, h.Normal)
-	go av.Make(&wg, &databaseLock, readfromLast, assetCode, nameEn, isIndex, -time.Duration(time.Hour*24*4000), time.Now(), h.D1, h.Normal)
-
-	if isIndex == false {
-		go av.Make(&wg, &databaseLock, readfromLast, assetCode, nameEn, isIndex, -time.Duration(time.Hour*24*250), time.Now(), h.H2, h.Normal)
-		go av.Make(&wg, &databaseLock, readfromLast, assetCode, nameEn, isIndex, -time.Duration(time.Hour*24*360), time.Now(), h.H4, h.Normal)
-
-		go av.Make(&wg, &databaseLock, readfromLast, assetCode, nameEn, isIndex, -time.Duration(time.Hour*24*250), time.Now(), h.H1, h.Adj)
-		go av.Make(&wg, &databaseLock, readfromLast, assetCode, nameEn, isIndex, -time.Duration(time.Hour*24*250), time.Now(), h.H2, h.Adj)
-		go av.Make(&wg, &databaseLock, readfromLast, assetCode, nameEn, isIndex, -time.Duration(time.Hour*24*360), time.Now(), h.H4, h.Adj)
-		go av.Make(&wg, &databaseLock, readfromLast, assetCode, nameEn, isIndex, -time.Duration(time.Hour*24*4000), time.Now(), h.D1, h.Adj)
-	}
-	wg.Wait()
-	parentWaitGroup.Done()
-	return nil
-}
-func avardMainProcess(readfromLast bool) error {
-
-	list, e := av.ReadJsonWatchList()
-
-	if e != nil {
-		return errors.New(fmt.Sprintf("config not found "))
-	}
-	var wg sync.WaitGroup
-	wg.Add(len(list.Tehran))
-	for _, g := range list.Tehran {
-		go avardAssetProcess(&wg, readfromLast, g.AssetCode, g.NameEn, g.IsIndex)
-		/*	if e != nil {
-			return e
-		}*/
-	}
-	wg.Wait()
-	return nil
-}
 func readArgs(a []string, key string) (string, bool) {
 	for i := 1; i < len(a); i++ {
 		if strings.HasPrefix(strings.ToLower(a[i]), key) {
@@ -137,9 +90,8 @@ func readArgs(a []string, key string) (string, bool) {
 //___________________________________________________________________
 func commands(a []string) error {
 
-
 	if len(a) > 0 && strings.ToLower(a[0]) == "crypto" {
-
+		binance :=av.NewBinance()
 		if v, ok := readArgs(a, "cachepath="); ok {
 			h.SetRootCache(v)
 		}
@@ -156,13 +108,12 @@ func commands(a []string) error {
 			}
 		}
 
-
 		//0000000000000
-		list, er := av.ReadJsonWatchList()
+		list, er := binance.ReadJsonWatchList()
 		if er != nil {
 			return errors.New(fmt.Sprintf("config not found "))
 		}
-		k := av.SyncDb(list)
+		k := binance.SyncDb(list)
 		if k != nil {
 			return errors.New(fmt.Sprintf("sync db failed."))
 		}
@@ -183,14 +134,14 @@ func commands(a []string) error {
 	}
 
 	if len(a) > 0 && strings.HasPrefix(strings.ToLower(a[0]), "tehran") {
-
+		tehran :=av.NewTehran()
 		if v, ok := readArgs(a, "cachepath="); ok {
 			h.SetRootCache(v)
 		}
 
 		if _, ok := readArgs(a, "-synclist"); ok {
 			var dbLock sync.Mutex
-			e := av.SyncStockList(&dbLock)
+			e := tehran.SyncStockList(&dbLock)
 			if e != nil {
 				return errors.New(fmt.Sprintf("tehran failed: %v", e))
 			}
@@ -204,23 +155,68 @@ func commands(a []string) error {
 
 		if _, ok := readArgs(a, "-stockList"); ok {
 			var dbLock sync.Mutex
-			e := av.OutStockList(&dbLock)
+			e := tehran.OutStockList(&dbLock)
 			if e != nil {
 				return errors.New(fmt.Sprintf("tehran failed: %v", e))
 			}
 			return nil
 		}
 		//0000000000000
-		list, er := av.ReadJsonWatchList()
+		list, er := tehran.ReadJsonWatchList()
 		if er != nil {
 			return errors.New(fmt.Sprintf("config not found "))
 		}
-		k := av.SyncDb(list)
+		k := tehran.SyncDb(list)
 		if k != nil {
 			return errors.New(fmt.Sprintf("sync db failed."))
 		}
 
-		e := avardMainProcess(isreadFromLast)
+		e := tehran.Run(isreadFromLast)
+		if e != nil {
+			return errors.New(fmt.Sprintf("tehran failed: %v", e))
+		}
+		return nil
+	}
+
+	if len(a) > 0 && strings.HasPrefix(strings.ToLower(a[0]), "binance") {
+		biance :=av.NewBinance()
+		if v, ok := readArgs(a, "cachepath="); ok {
+			h.SetRootCache(v)
+		}
+
+		if _, ok := readArgs(a, "-synclist"); ok {
+			var dbLock sync.Mutex
+			e := biance.SyncStockList(&dbLock)
+			if e != nil {
+				return errors.New(fmt.Sprintf("tehran failed: %v", e))
+			}
+			return nil
+		}
+
+		isreadFromLast := false
+		if _, ok := readArgs(a, "-l"); ok {
+			isreadFromLast = true
+		}
+
+		if _, ok := readArgs(a, "-stockList"); ok {
+			var dbLock sync.Mutex
+			e := biance.OutStockList(&dbLock)
+			if e != nil {
+				return errors.New(fmt.Sprintf("tehran failed: %v", e))
+			}
+			return nil
+		}
+		//0000000000000
+		list, er := biance.ReadJsonWatchList()
+		if er != nil {
+			return errors.New(fmt.Sprintf("config not found "))
+		}
+		k := biance.SyncDb(list)
+		if k != nil {
+			return errors.New(fmt.Sprintf("sync db failed."))
+		}
+
+		e := biance.Run(isreadFromLast)
 		if e != nil {
 			return errors.New(fmt.Sprintf("tehran failed: %v", e))
 		}

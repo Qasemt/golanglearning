@@ -2,9 +2,26 @@ package helper
 
 import (
 	"fmt"
+	"sync"
 	"time"
 )
+//::::::::::::::::::::::::::::: INTERFACE
+
+
+
 //::::::::::::::::::::::::::::: STRUCT
+type StockQuery struct {
+	WaitGroupobj *sync.WaitGroup
+	DBLock *sync.Mutex
+	ReadfromLast bool
+	AssetCode string
+	AssetNameEn string
+	Duration time.Duration
+	EndTime time.Time
+	TimeFrame ETimeFrame
+	TypeChart ETypeChart
+	IsIndex bool
+}
 type StockItem struct {
 	D string
 	T string
@@ -78,7 +95,17 @@ func (e ETypeChart) ToString() string {
 	}
 }
 
+func (e EProvider) ToString() string {
+	switch e {
+	case Binance:
+		return "binance"
+	case Avard:
+		return "avard"
 
+	default:
+		return "aa"
+	}
+}
 func (e ETimeFrame) ToString2() string {
 	switch e {
 	case M1:

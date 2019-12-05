@@ -1,36 +1,4 @@
-{
-//     "go.autocompleteUnimportedPackages": true,
-//     "go.useLanguageServer": true,
-//     "go.formatTool": "goimports",
-//     "[go]": {
-//         "editor.snippetSuggestions": "none",
-//         "editor.formatOnSave": true,
-//         "editor.codeActionsOnSave": {
-//             "source.organizeImports": true
-            
-//         }
-//     },
-//   //  "go.inferGopath":false,
-//     "gopls": {
-//         "usePlaceholders": true // add parameter placeholders when completing a function
-//     },
-//     "files.eol": "\n", // formatting only supports LF line endings    
-"go.languageServerExperimentalFeatures": {
-  "format": true,
-  "autoComplete": true,
-  "rename": true,
-  "goToDefinition": true,
-  "hover": true,
-  "signatureHelp": true,
-  "goToTypeDefinition": true,
-  "goToImplementation": true,
-  "documentSymbols": true,
-  "workspaceSymbols": true,
-  "findReferences": true,
-  "diagnostics": true,
-  "documentLink": true
-},
-    "go.toolsEnvVars": {
+{"go.toolsEnvVars": {
         "GO111MODULE": "on",
         
       //  "GOPROXY": "socks5://127.0.0.1:9150"
