@@ -290,7 +290,7 @@ func GetJson(url_path string, target_object_json interface{}) error {
 	//return json.NewDecoder(r.Body).Decode(target)
 }
 func GetJsonBin(url_path string, target_object_json interface{}) error {
-	fmt.Println(url_path)
+	//fmt.Println(url_path)
 	c := &ClientHelper{
 		window: 5000,
 		apikey: GetAPIKey(),

@@ -272,7 +272,7 @@ func (a StockProvider) make(sq StockQuery) error {
 
 	} else if a.Provider == Binance {
 		for _, h := range times {
-		l:=	a.getDateRange1(h.Begin,h.End,sq.TimeFrame)
+			l := a.getDateRangeBy500Hours(h.Begin, h.End, sq.TimeFrame)
 
 			for _, h1 := range l {
 				raws, e := a.downloadAsset(sq, h1)
@@ -373,16 +373,35 @@ func (a StockProvider) getDateRangeYears(duration time.Duration, end time.Time) 
 	}
 	return day_rang
 }
-func (a StockProvider) getDateRange1(start time.Time, end time.Time, frame ETimeFrame) []TimeRange {
+func (a StockProvider) getDateRangeBy500Hours(start time.Time, end time.Time, frame ETimeFrame) []TimeRange {
 	day_rang := []TimeRange{}
 	var diff float64
-	if frame != D1 {
-		diff = end.Sub(start).Hours() / 500 //8760 hour = years
-		diff = diff + 1
-	} else {
-		diff := end.Sub(start).Hours() / 8760 //8760 hour = years
-		diff = diff + 1
+	switch frame {
+	case M15:
+		diff = (end.Sub(start).Minutes() / 15) / 499
+	case H1:
+		{
+			diff = end.Sub(start).Hours() / 499
+		}
+	case H2:
+		{
+			diff =  (end.Sub(start).Hours() / 2) / 499 //8760 hour = years
+		}
+	case H4:
+		{
+			diff =(end.Sub(start).Hours() / 4) / 499 //8760 hour = years
+		}
+	case D1:
+		{
+			var d1 TimeRange
+			d1.File_name = TimeToString(start, "yyyymmdd") + ".csv"
+			d1.Begin = start
+			d1.End = end
+			day_rang = append(day_rang, d1)
+			return day_rang
+		}
 	}
+
 	var t1 time.Time
 	var t2 time.Time
 
@@ -393,12 +412,35 @@ func (a StockProvider) getDateRange1(start time.Time, end time.Time, frame ETime
 			t1 = t2
 		}
 
-		t2 = t1.Add(time.Hour * time.Duration(500))
+		switch frame {
+		case M15:
+			t2 = t1.Add((time.Minute * 15) * time.Duration(500))
+		case H1:
+			{
+				t2 = t1.Add((time.Hour)* time.Duration(500))
+			}
+		case H2:
+			{
+				t2 = t1.Add((time.Hour * 2) * time.Duration(500))
+			}
+		case H4:
+			{
+				t2 = t1.Add((time.Hour * 4) * time.Duration(500))
+			}
+		case D1:
+			{
 
+			}
+		}
+		//::::::::::::::::::::::::::::::::::::::
+		//fmt.Println(t1,t2)
+		if t1.After(time.Now()) {
+			break
+		}
 		var d1 TimeRange
 		d1.File_name = TimeToString(t1, "yyyymmdd") + ".csv"
 		d1.Begin = t1
-		d1.End =t2;
+		d1.End = t2
 		day_rang = append(day_rang, d1)
 	}
 	return day_rang
@@ -579,12 +621,12 @@ func (a StockProvider) avardAssetProcess(parentWaitGroup *sync.WaitGroup, readFr
 		}
 	} else if a.Provider == Binance {
 
-		wg.Add(1)
-		//go a.make(StockQuery{WaitGroupobj: &wg, DBLock: &databaseLock, ReadfromLast: readFromLast, AssetCode: assetCode, AssetNameEn: nameEn, IsIndex: false, Duration: -time.Duration(time.Hour * 24 * 250), EndTime: time.Now(), TimeFrame: M15, TypeChart: Normal})
+		wg.Add(5)
+		go a.make(StockQuery{WaitGroupobj: &wg, DBLock: &databaseLock, ReadfromLast: readFromLast, AssetCode: assetCode, AssetNameEn: nameEn, IsIndex: false, Duration: -time.Duration(time.Hour * 24 * 250), EndTime: time.Now(), TimeFrame: M15, TypeChart: Normal})
 		go a.make(StockQuery{WaitGroupobj: &wg, DBLock: &databaseLock, ReadfromLast: readFromLast, AssetCode: assetCode, AssetNameEn: nameEn, IsIndex: false, Duration: -time.Duration(time.Hour * 24 * 250), EndTime: time.Now(), TimeFrame: H1, TypeChart: Normal})
-		//	go a.make(StockQuery{WaitGroupobj: &wg, DBLock: &databaseLock, ReadfromLast: readFromLast, AssetCode: assetCode, AssetNameEn: nameEn, IsIndex: false, Duration: -time.Duration(time.Hour * 24 * 250), EndTime: time.Now(), TimeFrame: H2, TypeChart: Normal})
-		//	go a.make(StockQuery{WaitGroupobj: &wg, DBLock: &databaseLock, ReadfromLast: readFromLast, AssetCode: assetCode, AssetNameEn: nameEn, IsIndex: false, Duration: -time.Duration(time.Hour * 24 * 360), EndTime: time.Now(), TimeFrame: H4, TypeChart: Normal})
-		//	go a.make(StockQuery{WaitGroupobj: &wg, DBLock: &databaseLock, ReadfromLast: readFromLast, AssetCode: assetCode, AssetNameEn: nameEn, IsIndex: false, Duration: -time.Duration(time.Hour * 24 * 400), EndTime: time.Now(), TimeFrame: D1, TypeChart: Normal})
+		go a.make(StockQuery{WaitGroupobj: &wg, DBLock: &databaseLock, ReadfromLast: readFromLast, AssetCode: assetCode, AssetNameEn: nameEn, IsIndex: false, Duration: -time.Duration(time.Hour * 24 * 250), EndTime: time.Now(), TimeFrame: H2, TypeChart: Normal})
+		go a.make(StockQuery{WaitGroupobj: &wg, DBLock: &databaseLock, ReadfromLast: readFromLast, AssetCode: assetCode, AssetNameEn: nameEn, IsIndex: false, Duration: -time.Duration(time.Hour * 24 * 360), EndTime: time.Now(), TimeFrame: H4, TypeChart: Normal})
+		go a.make(StockQuery{WaitGroupobj: &wg, DBLock: &databaseLock, ReadfromLast: readFromLast, AssetCode: assetCode, AssetNameEn: nameEn, IsIndex: false, Duration: -time.Duration(time.Hour * 24 * 400), EndTime: time.Now(), TimeFrame: D1, TypeChart: Normal})
 	} else {
 		return errors.New("not selected :( ")
 	}
