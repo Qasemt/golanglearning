@@ -1,1 +1,1 @@
-go build -o stockloader.exe -ldflags "-s -w"
+go build -o D:\workspace\stock\data\stockloader.exe -ldflags "-s -w"

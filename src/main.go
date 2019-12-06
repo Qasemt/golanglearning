@@ -149,7 +149,7 @@ func commands(a []string) error {
 		}
 
 		isreadFromLast := false
-		if _, ok := readArgs(a, "-readfromlast"); ok {
+		if _, ok := readArgs(a, "-l"); ok {
 			isreadFromLast = true
 		}
 
