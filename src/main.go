@@ -153,7 +153,7 @@ func commands(a []string) error {
 			isreadFromLast = true
 		}
 
-		if _, ok := readArgs(a, "-stockList"); ok {
+		if _, ok := readArgs(a, "-list"); ok {
 			var dbLock sync.Mutex
 			e := tehran.OutStockList(&dbLock)
 			if e != nil {
@@ -184,21 +184,12 @@ func commands(a []string) error {
 			h.SetRootCache(v)
 		}
 
-		if _, ok := readArgs(a, "-synclist"); ok {
-			var dbLock sync.Mutex
-			e := biance.SyncStockList(&dbLock)
-			if e != nil {
-				return errors.New(fmt.Sprintf("tehran failed: %v", e))
-			}
-			return nil
-		}
-
 		isreadFromLast := false
 		if _, ok := readArgs(a, "-l"); ok {
 			isreadFromLast = true
 		}
 
-		if _, ok := readArgs(a, "-stockList"); ok {
+		if _, ok := readArgs(a, "-list"); ok {
 			var dbLock sync.Mutex
 			e := biance.OutStockList(&dbLock)
 			if e != nil {

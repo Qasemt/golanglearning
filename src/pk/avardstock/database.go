@@ -86,7 +86,7 @@ func DatabaseInit(dbName1 string, timefrm string, db1 *gorm.DB) (*gorm.DB, strin
 	return db1, fullPath, nil
 }
 
-func Migrate(dbName1 string,isp  *StockProvider ) error {
+func Migrate(dbName1 string, isp *StockProvider) error {
 
 	var fullPath string
 	var db *gorm.DB
@@ -98,9 +98,9 @@ func Migrate(dbName1 string,isp  *StockProvider ) error {
 	}
 
 	if strings.Contains(fullPath, "main.bin") {
-			db.AutoMigrate(&Nemad{})
+		db.AutoMigrate(&Nemad{})
 	} else {
-			db.AutoMigrate(&StockFromWebService{})
+		db.AutoMigrate(&StockFromWebService{})
 	}
 	return nil
 }
@@ -182,6 +182,23 @@ func getRecordesStock(d *gorm.DB, k *sync.Mutex, assetid string, timeframe h.ETi
 	}
 	return items, nil
 }
+func GetNemadList(d *gorm.DB, k *sync.Mutex) ([]NemadAvard, error) {
+	defer k.Unlock()
+	k.Lock()
+
+	if d == nil {
+		return nil, errors.New("db not init")
+	}
+	var items []NemadAvard
+	if e1 := d.Find(&items).Error; gorm.IsRecordNotFoundError(e1) {
+		fmt.Println("getNemadList () -> record not found")
+	}
+	if d.Error != nil {
+		return nil, d.Error
+	}
+	return items, nil
+}
+
 func InsertAssetInfoFromAvard(d *gorm.DB, k *sync.Mutex, avardsAsset []NemadAvard) error {
 	defer k.Unlock()
 	k.Lock()

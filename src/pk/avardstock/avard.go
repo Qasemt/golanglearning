@@ -385,11 +385,11 @@ func (a StockProvider) getDateRangeBy500Hours(start time.Time, end time.Time, fr
 		}
 	case H2:
 		{
-			diff =  (end.Sub(start).Hours() / 2) / 499 //8760 hour = years
+			diff = (end.Sub(start).Hours() / 2) / 499 //8760 hour = years
 		}
 	case H4:
 		{
-			diff =(end.Sub(start).Hours() / 4) / 499 //8760 hour = years
+			diff = (end.Sub(start).Hours() / 4) / 499 //8760 hour = years
 		}
 	case D1:
 		{
@@ -417,7 +417,7 @@ func (a StockProvider) getDateRangeBy500Hours(start time.Time, end time.Time, fr
 			t2 = t1.Add((time.Minute * 15) * time.Duration(500))
 		case H1:
 			{
-				t2 = t1.Add((time.Hour)* time.Duration(500))
+				t2 = t1.Add((time.Hour) * time.Duration(500))
 			}
 		case H2:
 			{
@@ -585,6 +585,21 @@ func (a StockProvider) SyncStockList(dbLock *sync.Mutex) error {
 	return nil
 }
 func (a StockProvider) OutStockList(dbLock *sync.Mutex) error {
+
+	var db1 *gorm.DB
+	//var fullPath string
+	//:::::::::::::::::::::::::::::::::::::::::;
+	db, _, er := DatabaseInit("main", "", db1)
+	if er != nil {
+		return er
+	}
+	items, err := GetNemadList(db, dbLock)
+	if err != nil {
+		return err
+	}
+	for _, k := range items {
+		fmt.Printf("%v %v %v\n",k.EntityType,k.EntityId,k.TradeSymbol)
+	}
 	return nil
 }
 
