@@ -1,12 +1,12 @@
 package avardstock
 
 import (
+	"encoding/csv"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/jinzhu/gorm"
 	. "github.com/qasemt/helper"
-
 	"io/ioutil"
 	"os"
 	"path"
@@ -191,8 +191,6 @@ func (a BinanceLoader) downloadAsset(sq StockQuery, item TimeRange) ([]StockFrom
 func (a StockProvider) make(sq StockQuery) error {
 
 	defer sq.WaitGroupobj.Done()
-
-	var db *gorm.DB
 	var fullPath string
 	//:::::::::::::::::::::::::::::::::::::::::
 	var last = StockFromWebService{
@@ -212,10 +210,12 @@ func (a StockProvider) make(sq StockQuery) error {
 	if sq.IsIndex {
 		dbname = fmt.Sprintf("%si", sq.AssetCode)
 	}
-	db, fullPath, er := DatabaseInit(dbname, sq.TimeFrame.ToString(), db)
+	db, fullPath, er := DatabaseInit(dbname, sq.TimeFrame.ToString())
+
 	if er != nil {
 		return errors.New(fmt.Sprintf("err:%v %v", er, fullPath))
 	}
+	defer a.closeMyDb(db)
 	//_________________
 
 	/*	var isFind bool = false
@@ -510,13 +510,13 @@ func (a StockProvider) ReadJsonWatchList() (*WatchListItem, error) {
 }
 func (a StockProvider) SyncStockList(dbLock *sync.Mutex) error {
 
-	var db1 *gorm.DB
 	//var fullPath string
 	//:::::::::::::::::::::::::::::::::::::::::;
-	db, _, er := DatabaseInit("main", "", db1)
+	db, _, er := DatabaseInit("main", "")
 	if er != nil {
 		return er
 	}
+	defer a.closeMyDb(db)
 	type NemadAvardRaw struct {
 		TypeId      string `json:"type_id"`
 		Type        string `json:"type"`
@@ -586,20 +586,40 @@ func (a StockProvider) SyncStockList(dbLock *sync.Mutex) error {
 }
 func (a StockProvider) OutStockList(dbLock *sync.Mutex) error {
 
-	var db1 *gorm.DB
 	//var fullPath string
 	//:::::::::::::::::::::::::::::::::::::::::;
-	db, _, er := DatabaseInit("main", "", db1)
+	db, _, er := DatabaseInit("main", "")
 	if er != nil {
 		return er
 	}
+	defer a.closeMyDb(db)
 	items, err := GetNemadList(db, dbLock)
 	if err != nil {
 		return err
 	}
+	var data = [][]string{{}}
 	for _, k := range items {
-		fmt.Printf("%v %v %v\n",k.EntityType,k.EntityId,k.TradeSymbol)
+		//fmt.Printf("%v %v %v\n", k.EntityType, k.EntityId, k.TradeSymbol)
+		data = append(data, []string{k.EntityType,  strconv.FormatInt(k.EntityId,10), k.TradeSymbol})
 	}
+	//:::::::: write to csv
+	var s string = path.Join(GetRootCache(),"stock_list.csv")
+	file, err := os.Create(s)
+	if err != nil {
+		return errors.New(fmt.Sprintf("OutStockList -> Cannot create file %s", err))
+	}
+	defer file.Close()
+
+	writer := csv.NewWriter(file)
+	defer writer.Flush()
+
+	for _, value := range data {
+		err := writer.Write(value)
+		if err != nil {
+			return errors.New(fmt.Sprintf("OutStockList -> Cannot create file %s", err))
+		}
+	}
+	fmt.Printf("has been successfully created : %s \n",s)
 	return nil
 }
 

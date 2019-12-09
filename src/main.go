@@ -153,7 +153,7 @@ func commands(a []string) error {
 			isreadFromLast = true
 		}
 
-		if _, ok := readArgs(a, "-list"); ok {
+		if _, ok := readArgs(a, "-o"); ok {
 			var dbLock sync.Mutex
 			e := tehran.OutStockList(&dbLock)
 			if e != nil {

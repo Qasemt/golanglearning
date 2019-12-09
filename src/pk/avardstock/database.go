@@ -57,8 +57,9 @@ func (e StockFromWebService) TOString() string {
 }
 
 //::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-func DatabaseInit(dbName1 string, timefrm string, db1 *gorm.DB) (*gorm.DB, string, error) {
+func DatabaseInit(dbName1 string, timefrm string) (*gorm.DB, string, error) {
 	var err error
+	var db *gorm.DB
 	var dirdbstr string
 	var fullPath string
 
@@ -75,28 +76,26 @@ func DatabaseInit(dbName1 string, timefrm string, db1 *gorm.DB) (*gorm.DB, strin
 		fullPath = path.Join(dirdbstr, fmt.Sprintf("%v.bin", dbName1))
 	}
 
-	if db1 == nil {
-		db1, err = gorm.Open("sqlite3", fullPath)
+		db, err = gorm.Open("sqlite3", fullPath)
 		if err != nil {
-			db1 = nil
+			db = nil
 			panic("failed to connect database")
 		}
-	}
 
-	return db1, fullPath, nil
+
+	return db, fullPath, nil
 }
-
 func Migrate(dbName1 string, isp *StockProvider) error {
 
 	var fullPath string
-	var db *gorm.DB
-	defer isp.closeMyDb(db)
-	db, fullPath, er := DatabaseInit(dbName1, "", db)
+
+
+	db, fullPath, er := DatabaseInit(dbName1, "")
 
 	if er != nil {
 		return errors.New(fmt.Sprintf("err:%v %v", er, fullPath))
 	}
-
+	defer isp.closeMyDb(db)
 	if strings.Contains(fullPath, "main.bin") {
 		db.AutoMigrate(&Nemad{})
 	} else {
