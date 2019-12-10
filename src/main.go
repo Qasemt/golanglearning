@@ -139,7 +139,7 @@ func commands(a []string) error {
 			h.SetRootCache(v)
 		}
 
-		if _, ok := readArgs(a, "-synclist"); ok {
+		if _, ok := readArgs(a, "-list"); ok {
 			var dbLock sync.Mutex
 			e := tehran.SyncStockList(&dbLock)
 			if e != nil {
