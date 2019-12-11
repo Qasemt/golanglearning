@@ -91,7 +91,7 @@ func readArgs(a []string, key string) (string, bool) {
 func commands(a []string) error {
 
 	if len(a) > 0 && strings.ToLower(a[0]) == "crypto" {
-		binance :=av.NewBinance()
+		binance :=av.NewBinance(h.OneFolder)
 		if v, ok := readArgs(a, "cachepath="); ok {
 			h.SetRootCache(v)
 		}
@@ -134,7 +134,7 @@ func commands(a []string) error {
 	}
 
 	if len(a) > 0 && strings.HasPrefix(strings.ToLower(a[0]), "tehran") {
-		tehran :=av.NewTehran()
+		tehran :=av.NewTehran(h.OneFolder)
 		if v, ok := readArgs(a, "cachepath="); ok {
 			h.SetRootCache(v)
 		}
@@ -179,7 +179,7 @@ func commands(a []string) error {
 	}
 
 	if len(a) > 0 && strings.HasPrefix(strings.ToLower(a[0]), "binance") {
-		biance :=av.NewBinance()
+		biance :=av.NewBinance(h.OneFolder)
 		if v, ok := readArgs(a, "cachepath="); ok {
 			h.SetRootCache(v)
 		}

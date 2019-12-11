@@ -5,22 +5,21 @@ import (
 	"sync"
 	"time"
 )
+
 //::::::::::::::::::::::::::::: INTERFACE
-
-
 
 //::::::::::::::::::::::::::::: STRUCT
 type StockQuery struct {
 	WaitGroupobj *sync.WaitGroup
-	DBLock *sync.Mutex
+	DBLock       *sync.Mutex
 	ReadfromLast bool
-	AssetCode string
-	AssetNameEn string
-	Duration time.Duration
-	EndTime time.Time
-	TimeFrame ETimeFrame
-	TypeChart ETypeChart
-	IsIndex bool
+	AssetCode    string
+	AssetNameEn  string
+	Duration     time.Duration
+	EndTime      time.Time
+	TimeFrame    ETimeFrame
+	TypeChart    ETypeChart
+	IsIndex      bool
 }
 type StockItem struct {
 	D string
@@ -51,14 +50,20 @@ type WatchListItem struct {
 	Tehran []WatchStock
 	Crypto []WatchStock
 }
+
 //::::::::::::::::::::::::::::: ENUM
 type ETimeFrame int
 type ETypeChart int
 type EProvider int
+type EFolderStoreMode int
 
 const (
-	Binance EProvider =1
-	Avard   EProvider =2
+	Binance EProvider = 1
+	Avard   EProvider = 2
+)
+const (
+	OneFolder   EFolderStoreMode = 0
+	ByTimeFrame EFolderStoreMode = 1
 )
 const (
 	M1  ETimeFrame = 1
@@ -72,6 +77,7 @@ const (
 	Normal ETypeChart = 0
 	Adj    ETypeChart = 1
 )
+
 //::::::::::::::::::::::::::::: ENUM TO STRING
 
 func (e ETypeChart) ToTypeChartStr() string {
@@ -162,5 +168,3 @@ func (e ETimeFrame) ToMinuth() int {
 	}
 	return 0
 }
-
-
