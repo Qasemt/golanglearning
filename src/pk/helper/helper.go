@@ -87,7 +87,7 @@ func CreateconfigTxtinfo(outPath string) error {
 	return nil
 }
 func CreateWatchList(outPath string) error {
-
+	f :=false
 	s := path.Join(outPath, "watchList.json")
 	if IsExist(s) {
 		return nil
@@ -99,21 +99,29 @@ func CreateWatchList(outPath string) error {
 				NameEn:"vaghadir",
 				AssetCode:"66",
 				IsIndex: false,
+				TimeFrame:[]string{},
+				IsAdj:&f,
 			},
 			{
 				NameEn:"Senosa",
 				AssetCode:"425",
 				IsIndex: false,
+				TimeFrame:[]string{},
+				IsAdj:&f,
 			},
 			{
 				NameEn:"sefars",
 				AssetCode:"400",
 				IsIndex: false,
+				TimeFrame:[]string{},
+				IsAdj:&f,
 			},
 			{
 				NameEn:"vanovin",
 				AssetCode:"393",
 				IsIndex: false,
+				TimeFrame:[]string{},
+				IsAdj:&f,
 			},
 
 		},
@@ -123,6 +131,7 @@ func CreateWatchList(outPath string) error {
 				NameEn:"BTCUSDT",
 				AssetCode:"BTCUSDT",
 				IsIndex: false,
+				TimeFrame:[]string{},
 			},
 
 
@@ -180,15 +189,20 @@ func TimeToString(t time.Time, format string) string {
 	return formatted
 }
 
-func UnixTimeStrToFormatDT(t time.Time, is_date bool) string {
+func UnixTimeStrToFormatDT(t time.Time, is_date bool,tf ETimeFrame) string {
 	var formatted string
 	if is_date {
 
 		formatted = fmt.Sprintf("%4d%02d%02d",
 			t.Year(), t.Month(), t.Day())
 	} else {
-		formatted = fmt.Sprintf("%02d%02d%02d",
-			t.Hour(), t.Minute(), t.Second())
+		if tf ==D1 {
+			formatted = fmt.Sprintf("%02d%02d%02d",
+				t.Hour(), t.Minute(), 0)
+		}else {
+			formatted = fmt.Sprintf("%02d%02d%02d",
+				t.Hour(), t.Minute(),t.Second())
+		}
 	}
 
 	return formatted

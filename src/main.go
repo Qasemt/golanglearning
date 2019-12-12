@@ -1,13 +1,10 @@
 package main
 
 import (
-	
 	"errors"
 	"fmt"
 	av "github.com/qasemt/avardstock"
 	h "github.com/qasemt/helper"
-	st "github.com/qasemt/stockwork"
-
 	"os"
 	"strings"
 	"sync"
@@ -124,12 +121,7 @@ func commands(a []string) error {
 			return errors.New("please set api key or secret key")
 		}
 
-		if strings.ToLower(a[1]) == "btcusdt" {
-			e := st.Make(a[1])
-			if e != nil {
-				return e
-			}
-		}
+
 		return nil
 	}
 
@@ -162,11 +154,11 @@ func commands(a []string) error {
 			return nil
 		}
 		//0000000000000
-		list, er := tehran.ReadJsonWatchList()
+		wlist, er := tehran.ReadJsonWatchList()
 		if er != nil {
 			return errors.New(fmt.Sprintf("config not found "))
 		}
-		k := tehran.SyncDb(list)
+		k := tehran.SyncDb(wlist)
 		if k != nil {
 			return errors.New(fmt.Sprintf("sync db failed."))
 		}

@@ -13,13 +13,11 @@ type StockQuery struct {
 	WaitGroupobj *sync.WaitGroup
 	DBLock       *sync.Mutex
 	ReadfromLast bool
-	AssetCode    string
-	AssetNameEn  string
+	Stock        WatchStock
 	Duration     time.Duration
 	EndTime      time.Time
 	TimeFrame    ETimeFrame
 	TypeChart    ETypeChart
-	IsIndex      bool
 }
 type StockItem struct {
 	D string
@@ -40,9 +38,11 @@ type TimeRange struct {
 	End       time.Time
 }
 type WatchStock struct {
-	AssetCode string `json:"asset_code"`
-	NameEn    string `json:"nameEn"`
-	IsIndex   bool   `json:"is_index"`
+	AssetCode string   `json:"asset_code"`
+	NameEn    string   `json:"nameEn"`
+	IsIndex   bool     `json:"is_index"`
+	TimeFrame []string `json:"time_frame"`
+	IsAdj 	  *bool  	`json:"is_adj"`
 }
 type WatchListItem struct {
 	Apikey string

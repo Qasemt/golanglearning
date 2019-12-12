@@ -71,125 +71,8 @@ type StockProvider struct {
 	IStockProvider
 	Provider        EProvider
 	FolderStoreMode EFolderStoreMode
+	_WatchListItem *WatchListItem
 }
-type TehranLoader struct {
-	StockProvider
-}
-type BinanceLoader struct {
-	StockProvider
-}
-
-//::::::::::::::::::::::::::::::::::::
-func NewTehran(store_mode EFolderStoreMode) *TehranLoader {
-	t := TehranLoader{StockProvider{}}
-
-	t.StockProvider.IStockProvider = &t
-	t.Provider = Avard
-	t.FolderStoreMode = store_mode
-	return &t
-}
-func NewBinance(store_mode EFolderStoreMode) *BinanceLoader {
-	t := BinanceLoader{StockProvider{}}
-
-	t.StockProvider.IStockProvider = &t
-	t.Provider = Binance
-	t.FolderStoreMode = store_mode
-	return &t
-}
-
-func (a TehranLoader) downloadAsset(sq StockQuery, item TimeRange) ([]StockFromWebService, error) {
-	var _rawKlines = []StockFromWebService{}
-	startStr := strconv.FormatInt(item.Begin.Unix(), 10)
-	endStr := strconv.FormatInt(item.End.Unix(), 10)
-	var frame string
-	if sq.TimeFrame == D1 {
-		frame = "D"
-	} else if sq.TimeFrame == M15 {
-		frame = "15"
-	} else if sq.TimeFrame == H1 {
-		frame = "60"
-	} else if sq.TimeFrame == H2 {
-		frame = "120"
-	} else if sq.TimeFrame == H4 {
-		frame = "240"
-	}
-	var typechart string = ""
-	var isAssetStr string = "asset" //asset / index
-	if sq.TypeChart == Adj {
-		typechart = "%3Atype1"
-	}
-	if sq.IsIndex == true {
-		isAssetStr = "index"
-	}
-	//var raws []interface{}
-	var raws []stocktemp
-	var itemsFinal []StockFromWebService
-	err := GetJson("https://rahavard365.com/api/chart/bars?ticker=exchange."+isAssetStr+"%3A"+sq.AssetCode+"%3Areal_close"+typechart+"&resolution="+frame+"&startDateTime="+startStr+"&endDateTime="+endStr+"&firstDataRequest=true", &raws)
-
-	if err != nil {
-		return nil, err
-	}
-
-	if _rawKlines == nil {
-		return nil, errors.New(fmt.Sprintf("downloadAsset failed ... %v\n", err))
-	}
-
-	for _, k := range raws {
-		var v StockFromWebService
-		v.Time = int64(k.Time)
-		v.O = k.O
-		v.H = k.H
-		v.L = k.L
-		v.C = k.C
-		v.V = k.V
-		itemsFinal = append(itemsFinal, v)
-
-	}
-
-	return itemsFinal, nil
-}
-func (a BinanceLoader) downloadAsset(sq StockQuery, item TimeRange) ([]StockFromWebService, error) {
-	var _rawKlines = []StockFromWebService{}
-	startStr := strconv.FormatInt(UnixMilli(item.Begin), 10)
-	endStr := strconv.FormatInt(UnixMilli(item.End), 10)
-	rawKlines := [][]interface{}{}
-	var itemsFinal []StockFromWebService
-	err := GetJsonBin("api/v3/klines?symbol="+sq.AssetCode+"&interval="+sq.TimeFrame.ToString()+"&startTime="+startStr+"&endTime="+endStr, &rawKlines)
-
-	if err != nil {
-		return nil, err
-	}
-
-	if _rawKlines == nil {
-		return nil, errors.New(fmt.Sprintf("downloadAsset failed ... %v\n", err))
-	}
-
-	for _, k := range rawKlines {
-		var v StockFromWebService
-		ts, _ := k[0].(float64)
-		v.Time = int64(ts)
-		open, _ := floatFromString(k[1])
-		v.O = open
-
-		high, _ := floatFromString(k[2])
-		v.H = high
-
-		low1, _ := floatFromString(k[3])
-		v.L = low1
-
-		close, _ := floatFromString(k[4])
-		v.C = close
-
-		volume, _ := floatFromString(k[5])
-		v.V = volume
-
-		itemsFinal = append(itemsFinal, v)
-
-	}
-
-	return itemsFinal, nil
-}
-
 //::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 func (a StockProvider) make(sq StockQuery) error {
 
@@ -209,9 +92,9 @@ func (a StockProvider) make(sq StockQuery) error {
 		V:         0,
 	}
 
-	var dbname string = sq.AssetCode
-	if sq.IsIndex {
-		dbname = fmt.Sprintf("%si", sq.AssetCode)
+	var dbname string = sq.Stock.AssetCode
+	if sq.Stock.IsIndex {
+		dbname = fmt.Sprintf("%si", sq.Stock.AssetCode)
 	}
 	db, fullPath, er := DatabaseInit(dbname, sq.TimeFrame.ToString())
 
@@ -242,7 +125,7 @@ func (a StockProvider) make(sq StockQuery) error {
 	//var itemsFinal []StockItem
 	if sq.ReadfromLast {
 		//::::::::::::::::::::::::::::::::::::::::: Get LAst RECORD FROM DATABASE
-		e := getLastRecord(db, sq.DBLock, sq.AssetCode, sq.TimeFrame.ToMinuth(), sq.TypeChart, &last)
+		e := getLastRecord(db, sq.DBLock, sq.Stock.AssetCode, sq.TimeFrame.ToMinuth(), sq.TypeChart, &last)
 		if e != nil {
 			return e
 		}
@@ -297,9 +180,9 @@ func (a StockProvider) make(sq StockQuery) error {
 
 	//::::::::::::::::::::::::::::::::::::::::: INSERT TO DATABASE
 	{
-		fmt.Println(a.Provider.ToString(), "->", "Type", sq.TypeChart.ToTypeChartStr(), "asset ", sq.AssetNameEn, "time frame ", sq.TimeFrame.ToString(), "load from net : ", len(itemsRaws))
+		fmt.Println(a.Provider.ToString(), "->", "Type", sq.TypeChart.ToTypeChartStr(), "asset ", sq.Stock.NameEn, "time frame ", sq.TimeFrame.ToString(), "load from net : ", len(itemsRaws))
 		if len(itemsRaws) > 0 {
-			InsertStocks(db, sq.DBLock, sq.IsIndex, itemsRaws, sq.AssetCode, sq.TimeFrame, sq.TypeChart)
+			InsertStocks(db, sq.DBLock, sq.Stock.IsIndex, itemsRaws,  sq.Stock.AssetCode, sq.TimeFrame, sq.TypeChart)
 			//if err != nil {
 			//	return errors.New(fmt.Sprintf("Insert Stocks is fialed: %v ",err))
 			//}
@@ -307,7 +190,7 @@ func (a StockProvider) make(sq StockQuery) error {
 	}
 	//::::::::::::::::::::::::::::::::::::::::: LOAD FROM DATABASE AND OUT TO CSV
 	{
-		itemsRaw, err := getRecordesStock(db, sq.DBLock, sq.AssetCode, sq.TimeFrame, sq.TypeChart)
+		itemsRaw, err := getRecordesStock(db, sq.DBLock, sq.Stock.AssetCode, sq.TimeFrame, sq.TypeChart)
 		if err != nil {
 			return errors.New(fmt.Sprintf("get Stocks is failed: %v ", err))
 		}
@@ -315,8 +198,8 @@ func (a StockProvider) make(sq StockQuery) error {
 		for _, k := range itemsRaw {
 			var v StockItem
 			time1 := time.Unix(0, int64(k.Time)*int64(time.Millisecond))
-			v.D = UnixTimeStrToFormatDT(time1, true)
-			v.T = UnixTimeStrToFormatDT(time1, false)
+			v.D = UnixTimeStrToFormatDT(time1, true,sq.TimeFrame)
+			v.T = UnixTimeStrToFormatDT(time1, false,sq.TimeFrame)
 
 			v.O = k.O
 			v.H = k.H
@@ -344,20 +227,20 @@ func (a StockProvider) make(sq StockQuery) error {
 						dirCachePath = path.Join(GetRootCache(), "tehran")
 					}
 					if sq.TypeChart == Normal {
-						fileName = fmt.Sprintf("%v_%v.csv", sq.AssetNameEn, strings.ToLower(sq.TimeFrame.ToString2()))
+						fileName = fmt.Sprintf("%v_%v.csv", sq.Stock.NameEn, strings.ToLower(sq.TimeFrame.ToString2()))
 					} else {
-						fileName = fmt.Sprintf("%v_%v_%v.csv", sq.AssetNameEn, strings.ToLower(sq.TimeFrame.ToString2()), "a")
+						fileName = fmt.Sprintf("%v_%v_%v.csv", sq.Stock.NameEn, strings.ToLower(sq.TimeFrame.ToString2()), "a")
 					}
 				}
 			case Binance:
 				{
 					if a.FolderStoreMode == ByTimeFrame {
-						dirCachePath = path.Join(GetRootCache(), "crypto", sq.AssetCode)
+						dirCachePath = path.Join(GetRootCache(), "crypto", sq.Stock.AssetCode)
 
 					} else {
 						dirCachePath = path.Join(GetRootCache(), "crypto")
 					}
-					fileName = fmt.Sprintf("%v_%v.csv", strings.ToLower(sq.AssetCode), strings.ToLower(sq.TimeFrame.ToString2()))
+					fileName = fmt.Sprintf("%v_%v.csv", strings.ToLower(sq.Stock.AssetCode), strings.ToLower(sq.TimeFrame.ToString2()))
 				}
 			}
 
@@ -464,10 +347,6 @@ func (a StockProvider) getDateRangeBy500Hours(start time.Time, end time.Time, fr
 	}
 	return day_rang
 }
-
-/*func (a StockProvider) make(sq StockQuery) error {
-	return a.make(sq);
-}*/
 //::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 
 func (a StockProvider) SyncDb(wl *WatchListItem) error {
@@ -603,6 +482,8 @@ func (a StockProvider) SyncStockList(dbLock *sync.Mutex) error {
 
 	return nil
 }
+
+/*out stock */
 func (a StockProvider) OutStockList(dbLock *sync.Mutex) error {
 
 	//var fullPath string
@@ -643,9 +524,30 @@ func (a StockProvider) OutStockList(dbLock *sync.Mutex) error {
 }
 
 //::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-func (a StockProvider) avardAssetProcess(parentWaitGroup *sync.WaitGroup, readFromLast bool, assetCode string, nameEn string, isIndex bool) error {
+func (a StockProvider) isHasTimeFrame( timeframe ETimeFrame,stock WatchStock) bool{
 
-	if nameEn == "" || assetCode == "" {
+if stock.TimeFrame == nil{
+	return  true
+}
+
+	for _, g := range stock.TimeFrame {
+		if strings.ToLower(timeframe.ToString2()) == strings.ToLower(g){
+			return true
+		}
+	}
+	return false
+}
+func (a StockProvider) isHasAdjust(stock WatchStock) bool{
+
+	if stock.IsAdj == nil{
+		return  true
+	}
+
+	return *stock.IsAdj
+}
+func (a StockProvider) avardAssetProcess(parentWaitGroup *sync.WaitGroup, readFromLast bool,watchStock WatchStock) error {
+
+	if watchStock.NameEn == "" || watchStock.AssetCode == "" {
 		parentWaitGroup.Done()
 		return errors.New("field is empty ")
 
@@ -654,36 +556,76 @@ func (a StockProvider) avardAssetProcess(parentWaitGroup *sync.WaitGroup, readFr
 	var wg sync.WaitGroup
 	if a.Provider == Avard {
 
-		if isIndex == true {
+		/*if watchStock.IsIndex == true {
 			wg.Add(2)
 		} else {
 			wg.Add(8)
-		}
+		}*/
 		var num_d1  time.Duration= 4000
-		var	num_h4 time.Duration=500
-		var	num_h2  time.Duration=300
-		var	num_h1  time.Duration=300
-		go a.make(StockQuery{WaitGroupobj: &wg, DBLock: &databaseLock, ReadfromLast: readFromLast, AssetCode: assetCode, AssetNameEn: nameEn, IsIndex: isIndex, Duration: -time.Duration(time.Hour * 24 * num_h1), EndTime: time.Now(), TimeFrame: H1, TypeChart: Normal})
+		var	num_h4 time.Duration=1000
+		var	num_h2  time.Duration=500
+		var	num_h1  time.Duration=500
 
-		go a.make(StockQuery{WaitGroupobj: &wg, DBLock: &databaseLock, ReadfromLast: readFromLast, AssetCode: assetCode, AssetNameEn: nameEn, IsIndex: isIndex, Duration: -time.Duration(time.Hour * 24 * num_d1), EndTime: time.Now(), TimeFrame: D1, TypeChart: Normal})
+		if a.isHasTimeFrame(H1,watchStock){
+			wg.Add(1)
+			go a.make(StockQuery{WaitGroupobj: &wg, DBLock: &databaseLock, ReadfromLast: readFromLast,Stock:watchStock, Duration: -time.Duration(time.Hour * 24 * num_h1), EndTime: time.Now(), TimeFrame: H1, TypeChart: Normal})
+		}
+		if a.isHasTimeFrame(D1,watchStock) {
+			wg.Add(1)
+			go a.make(StockQuery{WaitGroupobj: &wg, DBLock: &databaseLock, ReadfromLast: readFromLast, Stock: watchStock, Duration: -time.Duration(time.Hour * 24 * num_d1), EndTime: time.Now(), TimeFrame: D1, TypeChart: Normal})
+		}
 
-		if isIndex == false {
-			go a.make(StockQuery{WaitGroupobj: &wg, DBLock: &databaseLock, ReadfromLast: readFromLast, AssetCode: assetCode, AssetNameEn: nameEn, IsIndex: isIndex, Duration: -time.Duration(time.Hour * 24 * num_h2), EndTime: time.Now(), TimeFrame: H2, TypeChart: Normal})
-			go a.make(StockQuery{WaitGroupobj: &wg, DBLock: &databaseLock, ReadfromLast: readFromLast, AssetCode: assetCode, AssetNameEn: nameEn, IsIndex: isIndex, Duration: -time.Duration(time.Hour * 24 * num_h4), EndTime: time.Now(), TimeFrame: H4, TypeChart: Normal})
-
-			go a.make(StockQuery{WaitGroupobj: &wg, DBLock: &databaseLock, ReadfromLast: readFromLast, AssetCode: assetCode, AssetNameEn: nameEn, IsIndex: isIndex, Duration: -time.Duration(time.Hour * 24 * num_h1), EndTime: time.Now(), TimeFrame: H1, TypeChart: Adj})
-			go a.make(StockQuery{WaitGroupobj: &wg, DBLock: &databaseLock, ReadfromLast: readFromLast, AssetCode: assetCode, AssetNameEn: nameEn, IsIndex: isIndex, Duration: -time.Duration(time.Hour * 24 * num_h2), EndTime: time.Now(), TimeFrame: H2, TypeChart: Adj})
-			go a.make(StockQuery{WaitGroupobj: &wg, DBLock: &databaseLock, ReadfromLast: readFromLast, AssetCode: assetCode, AssetNameEn: nameEn, IsIndex: isIndex, Duration: -time.Duration(time.Hour * 24 * num_h4), EndTime: time.Now(), TimeFrame: H4, TypeChart: Adj})
-			go a.make(StockQuery{WaitGroupobj: &wg, DBLock: &databaseLock, ReadfromLast: readFromLast, AssetCode: assetCode, AssetNameEn: nameEn, IsIndex: isIndex, Duration: -time.Duration(time.Hour * 24 * num_d1), EndTime: time.Now(), TimeFrame: D1, TypeChart: Adj})
+		if watchStock.IsIndex == false {
+			if a.isHasTimeFrame(H2,watchStock) {
+				wg.Add(1)
+				go a.make(StockQuery{WaitGroupobj: &wg, DBLock: &databaseLock, ReadfromLast: readFromLast, Stock: watchStock, Duration: -time.Duration(time.Hour * 24 * num_h2), EndTime: time.Now(), TimeFrame: H2, TypeChart: Normal})
+			}
+			if a.isHasTimeFrame(H4,watchStock){
+				wg.Add(1)
+				go a.make(StockQuery{WaitGroupobj: &wg, DBLock: &databaseLock, ReadfromLast: readFromLast, Stock:watchStock, Duration: -time.Duration(time.Hour * 24 * num_h4), EndTime: time.Now(), TimeFrame: H4, TypeChart: Normal})
+			}
+			if a.isHasAdjust(watchStock) {
+				if a.isHasTimeFrame(H1, watchStock) {
+					wg.Add(1)
+					go a.make(StockQuery{WaitGroupobj: &wg, DBLock: &databaseLock, ReadfromLast: readFromLast, Stock: watchStock, Duration: -time.Duration(time.Hour * 24 * num_h1), EndTime: time.Now(), TimeFrame: H1, TypeChart: Adj})
+				}
+				if a.isHasTimeFrame(H2, watchStock) {
+					wg.Add(1)
+					go a.make(StockQuery{WaitGroupobj: &wg, DBLock: &databaseLock, ReadfromLast: readFromLast, Stock: watchStock, Duration: -time.Duration(time.Hour * 24 * num_h2), EndTime: time.Now(), TimeFrame: H2, TypeChart: Adj})
+				}
+				if a.isHasTimeFrame(H4, watchStock) {
+					wg.Add(1)
+					go a.make(StockQuery{WaitGroupobj: &wg, DBLock: &databaseLock, ReadfromLast: readFromLast, Stock: watchStock, Duration: -time.Duration(time.Hour * 24 * num_h4), EndTime: time.Now(), TimeFrame: H4, TypeChart: Adj})
+				}
+				if a.isHasTimeFrame(D1, watchStock) {
+					wg.Add(1)
+					go a.make(StockQuery{WaitGroupobj: &wg, DBLock: &databaseLock, ReadfromLast: readFromLast, Stock: watchStock, Duration: -time.Duration(time.Hour * 24 * num_d1), EndTime: time.Now(), TimeFrame: D1, TypeChart: Adj})
+				}
+			}
 		}
 	} else if a.Provider == Binance {
 
-		wg.Add(5)
-		go a.make(StockQuery{WaitGroupobj: &wg, DBLock: &databaseLock, ReadfromLast: readFromLast, AssetCode: assetCode, AssetNameEn: nameEn, IsIndex: false, Duration: -time.Duration(time.Hour * 24 * 250), EndTime: time.Now(), TimeFrame: M15, TypeChart: Normal})
-		go a.make(StockQuery{WaitGroupobj: &wg, DBLock: &databaseLock, ReadfromLast: readFromLast, AssetCode: assetCode, AssetNameEn: nameEn, IsIndex: false, Duration: -time.Duration(time.Hour * 24 * 250), EndTime: time.Now(), TimeFrame: H1, TypeChart: Normal})
-		go a.make(StockQuery{WaitGroupobj: &wg, DBLock: &databaseLock, ReadfromLast: readFromLast, AssetCode: assetCode, AssetNameEn: nameEn, IsIndex: false, Duration: -time.Duration(time.Hour * 24 * 250), EndTime: time.Now(), TimeFrame: H2, TypeChart: Normal})
-		go a.make(StockQuery{WaitGroupobj: &wg, DBLock: &databaseLock, ReadfromLast: readFromLast, AssetCode: assetCode, AssetNameEn: nameEn, IsIndex: false, Duration: -time.Duration(time.Hour * 24 * 360), EndTime: time.Now(), TimeFrame: H4, TypeChart: Normal})
-		go a.make(StockQuery{WaitGroupobj: &wg, DBLock: &databaseLock, ReadfromLast: readFromLast, AssetCode: assetCode, AssetNameEn: nameEn, IsIndex: false, Duration: -time.Duration(time.Hour * 24 * 400), EndTime: time.Now(), TimeFrame: D1, TypeChart: Normal})
+
+		if a.isHasTimeFrame(M15,watchStock) {
+			wg.Add(1)
+			go a.make(StockQuery{WaitGroupobj: &wg, DBLock: &databaseLock, ReadfromLast: readFromLast, Stock: watchStock, Duration: -time.Duration(time.Hour * 24 * 250), EndTime: time.Now(), TimeFrame: M15, TypeChart: Normal})
+		}
+		if a.isHasTimeFrame(H1,watchStock) {
+			wg.Add(1)
+			go a.make(StockQuery{WaitGroupobj: &wg, DBLock: &databaseLock, ReadfromLast: readFromLast, Stock:watchStock, Duration: -time.Duration(time.Hour * 24 * 250), EndTime: time.Now(), TimeFrame: H1, TypeChart: Normal})
+		}
+		if a.isHasTimeFrame(H2,watchStock) {
+			wg.Add(1)
+			go a.make(StockQuery{WaitGroupobj: &wg, DBLock: &databaseLock, ReadfromLast: readFromLast, Stock:watchStock, Duration: -time.Duration(time.Hour * 24 * 250), EndTime: time.Now(), TimeFrame: H2, TypeChart: Normal})
+		}
+		if a.isHasTimeFrame(H4,watchStock) {
+			wg.Add(1)
+			go a.make(StockQuery{WaitGroupobj: &wg, DBLock: &databaseLock, ReadfromLast: readFromLast,Stock:watchStock, Duration: -time.Duration(time.Hour * 24 * 360), EndTime: time.Now(), TimeFrame: H4, TypeChart: Normal})
+		}
+		if a.isHasTimeFrame(D1,watchStock) {
+			wg.Add(1)
+			go a.make(StockQuery{WaitGroupobj: &wg, DBLock: &databaseLock, ReadfromLast: readFromLast, Stock:watchStock, Duration: -time.Duration(time.Hour * 24 * 400), EndTime: time.Now(), TimeFrame: D1, TypeChart: Normal})
+		}
 	} else {
 		return errors.New("not selected :( ")
 	}
@@ -694,24 +636,25 @@ func (a StockProvider) avardAssetProcess(parentWaitGroup *sync.WaitGroup, readFr
 }
 func (a StockProvider) Run(readfromLast bool) error {
 
-	list, e := a.ReadJsonWatchList()
+	var e error
+	a._WatchListItem, e = a.ReadJsonWatchList()
 
 	if e != nil {
 		return errors.New(fmt.Sprintf("config not found "))
 	}
 	var wg sync.WaitGroup
 	if a.Provider == Avard {
-		wg.Add(len(list.Tehran))
-		for _, g := range list.Tehran {
-			go a.avardAssetProcess(&wg, readfromLast, g.AssetCode, g.NameEn, g.IsIndex)
+		wg.Add(len(a._WatchListItem.Tehran))
+		for _, g := range a._WatchListItem.Tehran {
+			go a.avardAssetProcess(&wg, readfromLast, g)
 			/*	if e != nil {
 				return e
 			}*/
 		}
 	} else if a.Provider == Binance {
-		wg.Add(len(list.Crypto))
-		for _, g := range list.Crypto {
-			go a.avardAssetProcess(&wg, readfromLast, g.AssetCode, g.NameEn, g.IsIndex)
+		wg.Add(len(a._WatchListItem.Crypto))
+		for _, g := range a._WatchListItem.Crypto {
+			go a.avardAssetProcess(&wg, readfromLast, g)
 			/*	if e != nil {
 				return e
 			}*/
