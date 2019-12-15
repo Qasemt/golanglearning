@@ -76,19 +76,17 @@ func DatabaseInit(dbName1 string, timefrm string) (*gorm.DB, string, error) {
 		fullPath = path.Join(dirdbstr, fmt.Sprintf("%v.bin", dbName1))
 	}
 
-		db, err = gorm.Open("sqlite3", fullPath)
-		if err != nil {
-			db = nil
-			panic("failed to connect database")
-		}
-
+	db, err = gorm.Open("sqlite3", fullPath)
+	if err != nil {
+		db = nil
+		panic("failed to connect database")
+	}
 
 	return db, fullPath, nil
 }
 func Migrate(dbName1 string, isp *StockProvider) error {
 
 	var fullPath string
-
 
 	db, fullPath, er := DatabaseInit(dbName1, "")
 
@@ -103,7 +101,7 @@ func Migrate(dbName1 string, isp *StockProvider) error {
 	}
 	return nil
 }
-func InsertStocks(d *gorm.DB, k *sync.Mutex, isIndex bool, stockList []StockFromWebService, assetid string, timeframe h.ETimeFrame, tc h.ETypeChart) error {
+func InsertStocks(d *gorm.DB, k *sync.Mutex, last_record StockFromWebService, isIndex bool, stockList []StockFromWebService, assetid string, timeframe h.ETimeFrame, tc h.ETypeChart) error {
 	defer k.Unlock()
 
 	k.Lock()
@@ -144,9 +142,20 @@ func InsertStocks(d *gorm.DB, k *sync.Mutex, isIndex bool, stockList []StockFrom
 	}
 
 	tx.Commit()
+	//::::::::::::::::::::::::
+	if last_record.ID != 0 {
+		smt1 := fmt.Sprintf(" delete from stock_from_web_services where  id = %v", last_record.ID)
+		tx1 := d.Begin()
+		if err1 := tx1.Exec(smt1).Error; err1 != nil {
+			tx1.Rollback()
+			return err1
+		}
+		tx1.Commit()
+	}
 
 	return nil
 }
+
 func getLastRecord(d *gorm.DB, k *sync.Mutex, assetid string, timeframe int, tc h.ETypeChart, out *StockFromWebService) error {
 	defer k.Unlock()
 	k.Lock()

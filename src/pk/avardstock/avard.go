@@ -182,7 +182,7 @@ func (a StockProvider) make(sq StockQuery) error {
 	{
 		fmt.Println(a.Provider.ToString(), "->", "Type", sq.TypeChart.ToTypeChartStr(), "asset ", sq.Stock.NameEn, "time frame ", sq.TimeFrame.ToString(), "load from net : ", len(itemsRaws))
 		if len(itemsRaws) > 0 {
-			InsertStocks(db, sq.DBLock, sq.Stock.IsIndex, itemsRaws,  sq.Stock.AssetCode, sq.TimeFrame, sq.TypeChart)
+			InsertStocks(db, sq.DBLock,last ,sq.Stock.IsIndex, itemsRaws,  sq.Stock.AssetCode, sq.TimeFrame, sq.TypeChart)
 			//if err != nil {
 			//	return errors.New(fmt.Sprintf("Insert Stocks is fialed: %v ",err))
 			//}
@@ -252,7 +252,6 @@ func (a StockProvider) make(sq StockQuery) error {
 	}
 	return nil
 }
-
 func (a StockProvider) closeMyDb(d *gorm.DB) {
 	if d != nil {
 		(*d).Close()
@@ -348,7 +347,6 @@ func (a StockProvider) getDateRangeBy500Hours(start time.Time, end time.Time, fr
 	return day_rang
 }
 //::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-
 func (a StockProvider) SyncDb(wl *WatchListItem) error {
 
 	for _, f := range wl.Tehran {
@@ -482,7 +480,6 @@ func (a StockProvider) SyncStockList(dbLock *sync.Mutex) error {
 
 	return nil
 }
-
 /*out stock */
 func (a StockProvider) OutStockList(dbLock *sync.Mutex) error {
 
@@ -522,7 +519,6 @@ func (a StockProvider) OutStockList(dbLock *sync.Mutex) error {
 	fmt.Printf("has been successfully created : %s \n", s)
 	return nil
 }
-
 //::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 func (a StockProvider) isHasTimeFrame( timeframe ETimeFrame,stock WatchStock) bool{
 
