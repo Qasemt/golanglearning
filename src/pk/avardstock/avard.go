@@ -154,6 +154,7 @@ func (a StockProvider) make(sq StockQuery) error {
 			for _, h1 := range l {
 				raws, e := a.downloadAsset(sq, h1)
 				if e != nil {
+					fmt.Printf("make()-> %v\n",e)
 					return e
 				}
 				itemsRaws = append(itemsRaws, raws...)
@@ -525,6 +526,9 @@ func (a StockProvider) isHasTimeFrame( timeframe ETimeFrame,stock WatchStock) bo
 if stock.TimeFrame == nil{
 	return  true
 }
+	if len(stock.TimeFrame) == 0{
+		return  true
+	}
 
 	for _, g := range stock.TimeFrame {
 		if strings.ToLower(timeframe.ToString2()) == strings.ToLower(g){

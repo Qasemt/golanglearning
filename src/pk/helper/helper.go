@@ -259,49 +259,49 @@ func GetJson(url_path string, target_object_json interface{}) error {
 					return err
 				}
 				transport := &http.Transport{Proxy: http.ProxyURL(fixedURL)}
-
 				myClient = &http.Client{Timeout: 30 * time.Second, Transport: transport}
 			} else {
 				proxy := &socks.Proxy{GetProxy(), "", ""}
 				tr := &http.Transport{
 					Dial: proxy.Dial,
 				}
-
-				// dialSocksProxy, err := proxy.SOCKS5("tcp", GetProxy(), nil, proxy.Direct)
-				// if err != nil {
-				// 	fmt.Println("Error connecting to proxy:", err)
-				// }
-				// tr := &http.Transport{Dial: dialSocksProxy.Dial}
 				myClient = &http.Client{Timeout: 30 * time.Second, Transport: tr}
 			}
 		}
 
 	} else {
 		var myTransport http.RoundTripper = &http.Transport{
-			Proxy:                 http.ProxyFromEnvironment,
-			ResponseHeaderTimeout: time.Second * 45,
+		//	Proxy:                 http.ProxyFromEnvironment,
+			ResponseHeaderTimeout: time.Second * 10,
 		}
-
 		//myClient = &http.Client{Timeout: 120 * time.Second}
 		myClient = &http.Client{Transport: myTransport}
 	}
-
-	r, err := myClient.Get(url_path)
+	req, err := http.NewRequest("GET", url_path, nil)
 	if err != nil {
+		fmt.Println("Req -> : ", err.Error())
 		return err
 	}
-	defer r.Body.Close()
-
-	body, err := ioutil.ReadAll(r.Body)
-
+	req.Header.Add("Sec-Fetch-Mode", "navigate")
+	req.Header.Add("Sec-Fetch-Site", "none")
+	req.Header.Add("Upgrade-Insecure-Requests", "1")
+	req.Header.Add("Accept", "application/json")
+	resp, err := myClient.Do(req)
 	if err != nil {
-		return err
+		return  err
 	}
 
-	json.Unmarshal(body, &target_object_json)
-	//fmt.Printf("body len : %v\n %v\n", len(body), string(body))
-	return err
-	//return json.NewDecoder(r.Body).Decode(target)
+	defer resp.Body.Close()
+	response, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return  err
+	}
+	if resp.StatusCode != http.StatusOK {
+		return  fmt.Errorf("status %d: %v", resp.StatusCode, string(response))
+	}
+
+	json.Unmarshal(response, &target_object_json)
+	return  err
 }
 func GetJsonBin(url_path string, target_object_json interface{}) error {
 	//fmt.Println(url_path)

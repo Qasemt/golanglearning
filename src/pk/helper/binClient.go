@@ -62,6 +62,7 @@ func (c *ClientHelper) do(method, endpoint string, data interface{}, sign bool, 
 		req.Header.Add("X-MBX-APIKEY", c.apikey)
 	}
 
+
 	req.Header.Add("Accept", "application/json")
 	resp, err := c.client.Do(req)
 	if err != nil {

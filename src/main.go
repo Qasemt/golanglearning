@@ -131,6 +131,18 @@ func commands(a []string) error {
 			h.SetRootCache(v)
 		}
 
+		if v, ok := readArgs(a, "proxy="); ok {
+			isSocks := false
+			if strings.HasPrefix(strings.ToLower(v), "socks5") {
+				isSocks = true
+			}
+			v = strings.Replace(v, "socks5://", "", -1)
+			err := h.SetProxy(v, isSocks)
+			if err != nil {
+				return err
+			}
+		}
+
 		if _, ok := readArgs(a, "-list"); ok {
 			var dbLock sync.Mutex
 			e := tehran.SyncStockList(&dbLock)
