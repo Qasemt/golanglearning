@@ -13,6 +13,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	socks "github.com/samuel/go-socks/socks"
@@ -245,9 +246,13 @@ func ToINT64(v string) int64 {
 	return res
 }
 
-func GetJson(url_path string, target_object_json interface{}) error {
+func GetJson(url_path string, target_object_json interface{},mux *sync.Mutex) error {
+	mux.Lock()
+	defer mux.Unlock()
 	//https://github.com/binance-exchange/go-binance/blob/1af034307da53bf592566c5c8a90856ddb5b34a4/util.go#L49
 	//fmt.Println(url_path)
+	var _timeout time.Duration= 60
+
 	var myClient *http.Client
 	if GetProxy() != "" {
 
@@ -259,20 +264,20 @@ func GetJson(url_path string, target_object_json interface{}) error {
 					return err
 				}
 				transport := &http.Transport{Proxy: http.ProxyURL(fixedURL)}
-				myClient = &http.Client{Timeout: 30 * time.Second, Transport: transport}
+				myClient = &http.Client{Timeout: _timeout * time.Second, Transport: transport}
 			} else {
 				proxy := &socks.Proxy{GetProxy(), "", ""}
 				tr := &http.Transport{
 					Dial: proxy.Dial,
 				}
-				myClient = &http.Client{Timeout: 30 * time.Second, Transport: tr}
+				myClient = &http.Client{Timeout: _timeout * time.Second, Transport: tr}
 			}
 		}
 
 	} else {
 		var myTransport http.RoundTripper = &http.Transport{
 		//	Proxy:                 http.ProxyFromEnvironment,
-			ResponseHeaderTimeout: time.Second * 10,
+			ResponseHeaderTimeout: time.Second * _timeout,
 		}
 		//myClient = &http.Client{Timeout: 120 * time.Second}
 		myClient = &http.Client{Transport: myTransport}

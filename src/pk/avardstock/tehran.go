@@ -46,7 +46,7 @@ func (a TehranLoader) downloadAsset(sq StockQuery, item TimeRange) ([]StockFromW
 	//var raws []interface{}
 	var raws []stocktemp
 	var itemsFinal []StockFromWebService
-	err := GetJson("https://rahavard365.com/api/chart/bars?ticker=exchange."+isAssetStr+"%3A"+sq.Stock.AssetCode+"%3Areal_close"+typechart+"&resolution="+frame+"&startDateTime="+startStr+"&endDateTime="+endStr+"&firstDataRequest=true", &raws)
+	err := GetJson("https://rahavard365.com/api/chart/bars?ticker=exchange."+isAssetStr+"%3A"+sq.Stock.AssetCode+"%3Areal_close"+typechart+"&resolution="+frame+"&startDateTime="+startStr+"&endDateTime="+endStr+"&firstDataRequest=true", &raws,&a.HttpLock)
 
 	if err != nil {
 		return nil, err

@@ -130,7 +130,7 @@ func commands(a []string) error {
 		if v, ok := readArgs(a, "cachepath="); ok {
 			h.SetRootCache(v)
 		}
-
+		isSeq := false
 		if v, ok := readArgs(a, "proxy="); ok {
 			isSocks := false
 			if strings.HasPrefix(strings.ToLower(v), "socks5") {
@@ -150,6 +150,9 @@ func commands(a []string) error {
 				return errors.New(fmt.Sprintf("tehran failed: %v", e))
 			}
 			return nil
+		}
+		if _, ok := readArgs(a, "-seq"); ok {
+			isSeq = true
 		}
 
 		isreadFromLast := false
@@ -175,7 +178,7 @@ func commands(a []string) error {
 			return errors.New(fmt.Sprintf("sync db failed."))
 		}
 
-		e := tehran.Run(isreadFromLast)
+		e := tehran.Run(isreadFromLast,isSeq)
 		if e != nil {
 			return errors.New(fmt.Sprintf("tehran failed: %v", e))
 		}
@@ -189,8 +192,12 @@ func commands(a []string) error {
 		}
 
 		isreadFromLast := false
+		isSeq := false
 		if _, ok := readArgs(a, "-l"); ok {
 			isreadFromLast = true
+		}
+		if _, ok := readArgs(a, "-seq"); ok {
+			isSeq = true
 		}
 
 		if _, ok := readArgs(a, "-list"); ok {
@@ -211,7 +218,7 @@ func commands(a []string) error {
 			return errors.New(fmt.Sprintf("sync db failed."))
 		}
 
-		e := biance.Run(isreadFromLast)
+		e := biance.Run(isreadFromLast,isSeq)
 		if e != nil {
 			return errors.New(fmt.Sprintf("tehran failed: %v", e))
 		}

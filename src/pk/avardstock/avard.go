@@ -65,18 +65,31 @@ type IStockProvider interface {
 		avardAssetProcess(parentWaitGroup *sync.WaitGroup, readFromLast bool, assetCode string, nameEn string, isIndex bool, provider EProvider) error
 
 	*/
-	Run(readfromLast bool) error
+	Run(readfromLast bool, isSeq bool) error
 }
 type StockProvider struct {
 	IStockProvider
 	Provider        EProvider
 	FolderStoreMode EFolderStoreMode
-	_WatchListItem *WatchListItem
+	IsSeqRunProcess bool
+	_WatchListItem  *WatchListItem
+	HttpLock        sync.Mutex
 }
+
 //::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+func (a StockProvider) procMake(sq StockQuery) {
+	if a.IsSeqRunProcess {
+		a.make(sq)
+	} else {
+		sq.WaitGroupobj.Add(1)
+		go a.make(sq)
+	}
+}
 func (a StockProvider) make(sq StockQuery) error {
 
-	defer sq.WaitGroupobj.Done()
+	if !a.IsSeqRunProcess {
+		defer sq.WaitGroupobj.Done()
+	}
 	var fullPath string
 	//:::::::::::::::::::::::::::::::::::::::::
 	var last = StockFromWebService{
@@ -154,7 +167,7 @@ func (a StockProvider) make(sq StockQuery) error {
 			for _, h1 := range l {
 				raws, e := a.downloadAsset(sq, h1)
 				if e != nil {
-					fmt.Printf("make()-> %v\n",e)
+					fmt.Printf("make()-> %v | %v | %v\n", sq.Stock.NameEn, sq.TimeFrame.ToString2(), e)
 					return e
 				}
 				itemsRaws = append(itemsRaws, raws...)
@@ -183,7 +196,7 @@ func (a StockProvider) make(sq StockQuery) error {
 	{
 		fmt.Println(a.Provider.ToString(), "->", "Type", sq.TypeChart.ToTypeChartStr(), "asset ", sq.Stock.NameEn, "time frame ", sq.TimeFrame.ToString(), "load from net : ", len(itemsRaws))
 		if len(itemsRaws) > 0 {
-			InsertStocks(db, sq.DBLock,last ,sq.Stock.IsIndex, itemsRaws,  sq.Stock.AssetCode, sq.TimeFrame, sq.TypeChart)
+			InsertStocks(db, sq.DBLock, last, sq.Stock.IsIndex, itemsRaws, sq.Stock.AssetCode, sq.TimeFrame, sq.TypeChart)
 			//if err != nil {
 			//	return errors.New(fmt.Sprintf("Insert Stocks is fialed: %v ",err))
 			//}
@@ -199,8 +212,8 @@ func (a StockProvider) make(sq StockQuery) error {
 		for _, k := range itemsRaw {
 			var v StockItem
 			time1 := time.Unix(0, int64(k.Time)*int64(time.Millisecond))
-			v.D = UnixTimeStrToFormatDT(time1, true,sq.TimeFrame)
-			v.T = UnixTimeStrToFormatDT(time1, false,sq.TimeFrame)
+			v.D = UnixTimeStrToFormatDT(time1, true, sq.TimeFrame)
+			v.T = UnixTimeStrToFormatDT(time1, false, sq.TimeFrame)
 
 			v.O = k.O
 			v.H = k.H
@@ -347,6 +360,7 @@ func (a StockProvider) getDateRangeBy500Hours(start time.Time, end time.Time, fr
 	}
 	return day_rang
 }
+
 //::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 func (a StockProvider) SyncDb(wl *WatchListItem) error {
 
@@ -431,12 +445,12 @@ func (a StockProvider) SyncStockList(dbLock *sync.Mutex) error {
 	var rawsAsset assetList
 	var rawsIndex assetList
 
-	errAsset := GetJson("https://rahavard365.com/api/search/items?type=asset", &rawsAsset)
+	errAsset := GetJson("https://rahavard365.com/api/search/items?type=asset", &rawsAsset, &a.HttpLock)
 
 	if errAsset != nil {
 		return errAsset
 	}
-	errIndex := GetJson("https://rahavard365.com/api/search/items?type=index", &rawsIndex)
+	errIndex := GetJson("https://rahavard365.com/api/search/items?type=index", &rawsIndex, &a.HttpLock)
 
 	if errIndex != nil {
 		return errIndex
@@ -481,6 +495,7 @@ func (a StockProvider) SyncStockList(dbLock *sync.Mutex) error {
 
 	return nil
 }
+
 /*out stock */
 func (a StockProvider) OutStockList(dbLock *sync.Mutex) error {
 
@@ -520,35 +535,37 @@ func (a StockProvider) OutStockList(dbLock *sync.Mutex) error {
 	fmt.Printf("has been successfully created : %s \n", s)
 	return nil
 }
-//::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-func (a StockProvider) isHasTimeFrame( timeframe ETimeFrame,stock WatchStock) bool{
 
-if stock.TimeFrame == nil{
-	return  true
-}
-	if len(stock.TimeFrame) == 0{
-		return  true
+//::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+func (a StockProvider) isHasTimeFrame(timeframe ETimeFrame, stock WatchStock) bool {
+
+	if stock.TimeFrame == nil {
+		return true
+	}
+	if len(stock.TimeFrame) == 0 {
+		return true
 	}
 
 	for _, g := range stock.TimeFrame {
-		if strings.ToLower(timeframe.ToString2()) == strings.ToLower(g){
+		if strings.ToLower(timeframe.ToString2()) == strings.ToLower(g) {
 			return true
 		}
 	}
 	return false
 }
-func (a StockProvider) isHasAdjust(stock WatchStock) bool{
+func (a StockProvider) isHasAdjust(stock WatchStock) bool {
 
-	if stock.IsAdj == nil{
-		return  true
+	if stock.IsAdj == nil {
+		return true
 	}
 
 	return *stock.IsAdj
 }
-func (a StockProvider) avardAssetProcess(parentWaitGroup *sync.WaitGroup, readFromLast bool,watchStock WatchStock) error {
 
+func (a StockProvider) avardAssetProcess(parentWaitGroup *sync.WaitGroup, readFromLast bool, watchStock WatchStock) error {
+	defer parentWaitGroup.Done()
 	if watchStock.NameEn == "" || watchStock.AssetCode == "" {
-		parentWaitGroup.Done()
+		//parentWaitGroup.Done()
 		return errors.New("field is empty ")
 
 	}
@@ -561,84 +578,72 @@ func (a StockProvider) avardAssetProcess(parentWaitGroup *sync.WaitGroup, readFr
 		} else {
 			wg.Add(8)
 		}*/
-		var num_d1  time.Duration= 4000
-		var	num_h4 time.Duration=1000
-		var	num_h2  time.Duration=500
-		var	num_h1  time.Duration=500
+		var num_d1 time.Duration = 4000
+		var num_h4 time.Duration = 1000
+		var num_h2 time.Duration = 500
+		var num_h1 time.Duration = 500
 
-		if a.isHasTimeFrame(H1,watchStock){
-			wg.Add(1)
-			go a.make(StockQuery{WaitGroupobj: &wg, DBLock: &databaseLock, ReadfromLast: readFromLast,Stock:watchStock, Duration: -time.Duration(time.Hour * 24 * num_h1), EndTime: time.Now(), TimeFrame: H1, TypeChart: Normal})
+		if a.isHasTimeFrame(H1, watchStock) {
+			a.procMake(StockQuery{WaitGroupobj: &wg, DBLock: &databaseLock, ReadfromLast: readFromLast, Stock: watchStock, Duration: -time.Duration(time.Hour * 24 * num_h1), EndTime: time.Now(), TimeFrame: H1, TypeChart: Normal})
 		}
-		if a.isHasTimeFrame(D1,watchStock) {
-			wg.Add(1)
-			go a.make(StockQuery{WaitGroupobj: &wg, DBLock: &databaseLock, ReadfromLast: readFromLast, Stock: watchStock, Duration: -time.Duration(time.Hour * 24 * num_d1), EndTime: time.Now(), TimeFrame: D1, TypeChart: Normal})
+		if a.isHasTimeFrame(D1, watchStock) {
+
+			a.procMake(StockQuery{WaitGroupobj: &wg, DBLock: &databaseLock, ReadfromLast: readFromLast, Stock: watchStock, Duration: -time.Duration(time.Hour * 24 * num_d1), EndTime: time.Now(), TimeFrame: D1, TypeChart: Normal})
 		}
 
 		if watchStock.IsIndex == false {
-			if a.isHasTimeFrame(H2,watchStock) {
-				wg.Add(1)
-				go a.make(StockQuery{WaitGroupobj: &wg, DBLock: &databaseLock, ReadfromLast: readFromLast, Stock: watchStock, Duration: -time.Duration(time.Hour * 24 * num_h2), EndTime: time.Now(), TimeFrame: H2, TypeChart: Normal})
+			if a.isHasTimeFrame(H2, watchStock) {
+
+				a.procMake(StockQuery{WaitGroupobj: &wg, DBLock: &databaseLock, ReadfromLast: readFromLast, Stock: watchStock, Duration: -time.Duration(time.Hour * 24 * num_h2), EndTime: time.Now(), TimeFrame: H2, TypeChart: Normal})
 			}
-			if a.isHasTimeFrame(H4,watchStock){
-				wg.Add(1)
-				go a.make(StockQuery{WaitGroupobj: &wg, DBLock: &databaseLock, ReadfromLast: readFromLast, Stock:watchStock, Duration: -time.Duration(time.Hour * 24 * num_h4), EndTime: time.Now(), TimeFrame: H4, TypeChart: Normal})
+			if a.isHasTimeFrame(H4, watchStock) {
+
+				a.procMake(StockQuery{WaitGroupobj: &wg, DBLock: &databaseLock, ReadfromLast: readFromLast, Stock: watchStock, Duration: -time.Duration(time.Hour * 24 * num_h4), EndTime: time.Now(), TimeFrame: H4, TypeChart: Normal})
 			}
 			if a.isHasAdjust(watchStock) {
 				if a.isHasTimeFrame(H1, watchStock) {
-					wg.Add(1)
-					go a.make(StockQuery{WaitGroupobj: &wg, DBLock: &databaseLock, ReadfromLast: readFromLast, Stock: watchStock, Duration: -time.Duration(time.Hour * 24 * num_h1), EndTime: time.Now(), TimeFrame: H1, TypeChart: Adj})
+					a.procMake(StockQuery{WaitGroupobj: &wg, DBLock: &databaseLock, ReadfromLast: readFromLast, Stock: watchStock, Duration: -time.Duration(time.Hour * 24 * num_h1), EndTime: time.Now(), TimeFrame: H1, TypeChart: Adj})
 				}
 				if a.isHasTimeFrame(H2, watchStock) {
-					wg.Add(1)
-					go a.make(StockQuery{WaitGroupobj: &wg, DBLock: &databaseLock, ReadfromLast: readFromLast, Stock: watchStock, Duration: -time.Duration(time.Hour * 24 * num_h2), EndTime: time.Now(), TimeFrame: H2, TypeChart: Adj})
+					a.procMake(StockQuery{WaitGroupobj: &wg, DBLock: &databaseLock, ReadfromLast: readFromLast, Stock: watchStock, Duration: -time.Duration(time.Hour * 24 * num_h2), EndTime: time.Now(), TimeFrame: H2, TypeChart: Adj})
 				}
 				if a.isHasTimeFrame(H4, watchStock) {
-					wg.Add(1)
-					go a.make(StockQuery{WaitGroupobj: &wg, DBLock: &databaseLock, ReadfromLast: readFromLast, Stock: watchStock, Duration: -time.Duration(time.Hour * 24 * num_h4), EndTime: time.Now(), TimeFrame: H4, TypeChart: Adj})
+					a.procMake(StockQuery{WaitGroupobj: &wg, DBLock: &databaseLock, ReadfromLast: readFromLast, Stock: watchStock, Duration: -time.Duration(time.Hour * 24 * num_h4), EndTime: time.Now(), TimeFrame: H4, TypeChart: Adj})
 				}
 				if a.isHasTimeFrame(D1, watchStock) {
-					wg.Add(1)
-					go a.make(StockQuery{WaitGroupobj: &wg, DBLock: &databaseLock, ReadfromLast: readFromLast, Stock: watchStock, Duration: -time.Duration(time.Hour * 24 * num_d1), EndTime: time.Now(), TimeFrame: D1, TypeChart: Adj})
+					a.procMake(StockQuery{WaitGroupobj: &wg, DBLock: &databaseLock, ReadfromLast: readFromLast, Stock: watchStock, Duration: -time.Duration(time.Hour * 24 * num_d1), EndTime: time.Now(), TimeFrame: D1, TypeChart: Adj})
 				}
 			}
 		}
 	} else if a.Provider == Binance {
 
-
-		if a.isHasTimeFrame(M15,watchStock) {
-			wg.Add(1)
-			go a.make(StockQuery{WaitGroupobj: &wg, DBLock: &databaseLock, ReadfromLast: readFromLast, Stock: watchStock, Duration: -time.Duration(time.Hour * 24 * 250), EndTime: time.Now(), TimeFrame: M15, TypeChart: Normal})
+		if a.isHasTimeFrame(M15, watchStock) {
+			a.procMake(StockQuery{WaitGroupobj: &wg, DBLock: &databaseLock, ReadfromLast: readFromLast, Stock: watchStock, Duration: -time.Duration(time.Hour * 24 * 250), EndTime: time.Now(), TimeFrame: M15, TypeChart: Normal})
 		}
-		if a.isHasTimeFrame(H1,watchStock) {
-			wg.Add(1)
-			go a.make(StockQuery{WaitGroupobj: &wg, DBLock: &databaseLock, ReadfromLast: readFromLast, Stock:watchStock, Duration: -time.Duration(time.Hour * 24 * 250), EndTime: time.Now(), TimeFrame: H1, TypeChart: Normal})
+		if a.isHasTimeFrame(H1, watchStock) {
+			a.procMake(StockQuery{WaitGroupobj: &wg, DBLock: &databaseLock, ReadfromLast: readFromLast, Stock: watchStock, Duration: -time.Duration(time.Hour * 24 * 250), EndTime: time.Now(), TimeFrame: H1, TypeChart: Normal})
 		}
-		if a.isHasTimeFrame(H2,watchStock) {
-			wg.Add(1)
-			go a.make(StockQuery{WaitGroupobj: &wg, DBLock: &databaseLock, ReadfromLast: readFromLast, Stock:watchStock, Duration: -time.Duration(time.Hour * 24 * 250), EndTime: time.Now(), TimeFrame: H2, TypeChart: Normal})
+		if a.isHasTimeFrame(H2, watchStock) {
+			a.procMake(StockQuery{WaitGroupobj: &wg, DBLock: &databaseLock, ReadfromLast: readFromLast, Stock: watchStock, Duration: -time.Duration(time.Hour * 24 * 250), EndTime: time.Now(), TimeFrame: H2, TypeChart: Normal})
 		}
-		if a.isHasTimeFrame(H4,watchStock) {
-			wg.Add(1)
-			go a.make(StockQuery{WaitGroupobj: &wg, DBLock: &databaseLock, ReadfromLast: readFromLast,Stock:watchStock, Duration: -time.Duration(time.Hour * 24 * 360), EndTime: time.Now(), TimeFrame: H4, TypeChart: Normal})
+		if a.isHasTimeFrame(H4, watchStock) {
+			a.procMake(StockQuery{WaitGroupobj: &wg, DBLock: &databaseLock, ReadfromLast: readFromLast, Stock: watchStock, Duration: -time.Duration(time.Hour * 24 * 360), EndTime: time.Now(), TimeFrame: H4, TypeChart: Normal})
 		}
-		if a.isHasTimeFrame(D1,watchStock) {
-			wg.Add(1)
-			go a.make(StockQuery{WaitGroupobj: &wg, DBLock: &databaseLock, ReadfromLast: readFromLast, Stock:watchStock, Duration: -time.Duration(time.Hour * 24 * 400), EndTime: time.Now(), TimeFrame: D1, TypeChart: Normal})
+		if a.isHasTimeFrame(D1, watchStock) {
+			a.procMake(StockQuery{WaitGroupobj: &wg, DBLock: &databaseLock, ReadfromLast: readFromLast, Stock: watchStock, Duration: -time.Duration(time.Hour * 24 * 400), EndTime: time.Now(), TimeFrame: D1, TypeChart: Normal})
 		}
 	} else {
 		return errors.New("not selected :( ")
 	}
 	wg.Wait()
-	parentWaitGroup.Done()
 
 	return nil
 }
-func (a StockProvider) Run(readfromLast bool) error {
+func (a StockProvider) Run(readfromLast bool, isSeq bool) error {
 
 	var e error
 	a._WatchListItem, e = a.ReadJsonWatchList()
-
+	a.IsSeqRunProcess = isSeq
 	if e != nil {
 		return errors.New(fmt.Sprintf("config not found "))
 	}
@@ -646,18 +651,22 @@ func (a StockProvider) Run(readfromLast bool) error {
 	if a.Provider == Avard {
 		wg.Add(len(a._WatchListItem.Tehran))
 		for _, g := range a._WatchListItem.Tehran {
-			go a.avardAssetProcess(&wg, readfromLast, g)
-			/*	if e != nil {
-				return e
-			}*/
+			if a.IsSeqRunProcess {
+				a.avardAssetProcess(&wg, readfromLast, g)
+			} else {
+				go a.avardAssetProcess(&wg, readfromLast, g)
+			}
+
 		}
 	} else if a.Provider == Binance {
 		wg.Add(len(a._WatchListItem.Crypto))
 		for _, g := range a._WatchListItem.Crypto {
-			go a.avardAssetProcess(&wg, readfromLast, g)
-			/*	if e != nil {
-				return e
-			}*/
+			if a.IsSeqRunProcess {
+				a.avardAssetProcess(&wg, readfromLast, g)
+			} else {
+				go a.avardAssetProcess(&wg, readfromLast, g)
+			}
+
 		}
 	}
 	wg.Wait()
