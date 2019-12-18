@@ -8,6 +8,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -27,8 +28,10 @@ type ClientHelper struct {
 // do invokes the given API command with the given data
 // sign indicates whether the api call should be done with signed payload
 // stream indicates if the request is stream related
-func (c *ClientHelper) do(method, endpoint string, data interface{}, sign bool, stream bool) (response []byte, err error) {
-	// Convert the given data to urlencoded format
+func (c *ClientHelper) do(method, endpoint string, data interface{}, sign bool, stream bool,mux *sync.Mutex) (response []byte, err error) {
+
+	mux.Lock()
+	defer mux.Unlock()
 	values, err := query.Values(data)
 	if err != nil {
 		return nil, err

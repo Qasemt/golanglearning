@@ -23,7 +23,7 @@ func (a BinanceLoader) downloadAsset(sq StockQuery, item TimeRange) ([]StockFrom
 	endStr := strconv.FormatInt(UnixMilli(item.End), 10)
 	rawKlines := [][]interface{}{}
 	var itemsFinal []StockFromWebService
-	err := GetJsonBin("api/v3/klines?symbol="+sq.Stock.AssetCode+"&interval="+sq.TimeFrame.ToString()+"&startTime="+startStr+"&endTime="+endStr, &rawKlines)
+	err := GetJsonBin("api/v3/klines?symbol="+sq.Stock.AssetCode+"&interval="+sq.TimeFrame.ToString()+"&startTime="+startStr+"&endTime="+endStr, &rawKlines,&a.HttpLock)
 
 	if err != nil {
 		return nil, err

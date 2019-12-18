@@ -308,7 +308,7 @@ func GetJson(url_path string, target_object_json interface{},mux *sync.Mutex) er
 	json.Unmarshal(response, &target_object_json)
 	return  err
 }
-func GetJsonBin(url_path string, target_object_json interface{}) error {
+func GetJsonBin(url_path string, target_object_json interface{},mux *sync.Mutex) error {
 	//fmt.Println(url_path)
 	c := &ClientHelper{
 		window: 5000,
@@ -316,7 +316,7 @@ func GetJsonBin(url_path string, target_object_json interface{}) error {
 		secret: GetSecret(),
 		client: http.DefaultClient,
 	}
-	res, err := c.do(http.MethodGet, url_path, nil, false, false)
+	res, err := c.do(http.MethodGet, url_path, nil, false, false,mux)
 
 	if err != nil {
 		return err
