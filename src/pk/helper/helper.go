@@ -302,7 +302,8 @@ func GetJson(url_path string, target_object_json interface{},mux *sync.Mutex) er
 		return  err
 	}
 	if resp.StatusCode != http.StatusOK {
-		return  fmt.Errorf("status %d: %v", resp.StatusCode, string(response))
+	//	return  fmt.Errorf("status %d: %v", resp.StatusCode, string(response))
+		return  fmt.Errorf("HTTP Error Status %v ",resp.StatusCode)
 	}
 
 	json.Unmarshal(response, &target_object_json)

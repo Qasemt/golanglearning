@@ -78,7 +78,10 @@ func (c *ClientHelper) do(method, endpoint string, data interface{}, sign bool, 
 		return nil, err
 	}
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("status %d: %v", resp.StatusCode, string(response))
+		//return nil, fmt.Errorf("status %d: %v", resp.StatusCode, string(response))
+
+			return  nil,fmt.Errorf("HTTP Error Status %v ",resp.StatusCode)
+
 	}
 	return response, err
 }
