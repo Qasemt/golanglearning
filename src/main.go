@@ -6,6 +6,7 @@ import (
 	av "github.com/qasemt/avardstock"
 	h "github.com/qasemt/helper"
 	"os"
+	"strconv"
 	"strings"
 	"sync"
 )
@@ -86,9 +87,9 @@ func readArgs(a []string, key string) (string, bool) {
 
 //___________________________________________________________________
 func commands(a []string) error {
-
+	var g *int64 = nil
 	if len(a) > 0 && strings.ToLower(a[0]) == "crypto" {
-		binance :=av.NewBinance(h.OneFolder)
+		binance := av.NewBinance(h.OneFolder)
 		if v, ok := readArgs(a, "cachepath="); ok {
 			h.SetRootCache(v)
 		}
@@ -121,15 +122,26 @@ func commands(a []string) error {
 			return errors.New("please set api key or secret key")
 		}
 
-
 		return nil
 	}
 
 	if len(a) > 0 && strings.HasPrefix(strings.ToLower(a[0]), "tehran") {
-		tehran :=av.NewTehran(h.OneFolder)
+		tehran := av.NewTehran(h.OneFolder)
 		if v, ok := readArgs(a, "cachepath="); ok {
 			h.SetRootCache(v)
 		}
+
+
+		if v, ok := readArgs(a, "timer="); ok {
+
+			i, err :=  strconv.ParseInt(v, 10, 64)
+			if err == nil {
+				g =&i
+			} else {
+				return fmt.Errorf("timer not valid %v", err)
+			}
+		}
+
 		isSeq := false
 		if v, ok := readArgs(a, "proxy="); ok {
 			isSocks := false
@@ -178,7 +190,7 @@ func commands(a []string) error {
 			return errors.New(fmt.Sprintf("sync db failed."))
 		}
 
-		e := tehran.Run(isreadFromLast,isSeq)
+		e := tehran.Run(isreadFromLast, isSeq, g)
 		if e != nil {
 			return errors.New(fmt.Sprintf("tehran failed: %v", e))
 		}
@@ -186,11 +198,20 @@ func commands(a []string) error {
 	}
 
 	if len(a) > 0 && strings.HasPrefix(strings.ToLower(a[0]), "binance") {
-		biance :=av.NewBinance(h.OneFolder)
+		biance := av.NewBinance(h.OneFolder)
 		if v, ok := readArgs(a, "cachepath="); ok {
 			h.SetRootCache(v)
 		}
 
+		if v, ok := readArgs(a, "timer="); ok {
+
+			i, err :=  strconv.ParseInt(v, 10, 64)
+			if err == nil {
+				g =&i
+			} else {
+				return fmt.Errorf("timer not valid %v", err)
+			}
+		}
 		isreadFromLast := false
 		isSeq := false
 		if _, ok := readArgs(a, "-l"); ok {
@@ -218,7 +239,7 @@ func commands(a []string) error {
 			return errors.New(fmt.Sprintf("sync db failed."))
 		}
 
-		e := biance.Run(isreadFromLast,isSeq)
+		e := biance.Run(isreadFromLast, isSeq, g)
 		if e != nil {
 			return errors.New(fmt.Sprintf("tehran failed: %v", e))
 		}

@@ -65,7 +65,7 @@ type IStockProvider interface {
 		avardAssetProcess(parentWaitGroup *sync.WaitGroup, readFromLast bool, assetCode string, nameEn string, isIndex bool, provider EProvider) error
 
 	*/
-	Run(readfromLast bool, isSeq bool) error
+	Run(readfromLast bool, isSeq bool,timer_minute *int64) error
 }
 type StockProvider struct {
 	IStockProvider
@@ -639,36 +639,82 @@ func (a StockProvider) avardAssetProcess(parentWaitGroup *sync.WaitGroup, readFr
 
 	return nil
 }
-func (a StockProvider) Run(readfromLast bool, isSeq bool) error {
-
+func (a StockProvider) Run(readfromLast bool, isSeq bool,timer_minute *int64) error {
 	var e error
 	a._WatchListItem, e = a.ReadJsonWatchList()
 	a.IsSeqRunProcess = isSeq
 	if e != nil {
 		return errors.New(fmt.Sprintf("config not found "))
 	}
-	var wg sync.WaitGroup
-	if a.Provider == Avard {
-		wg.Add(len(a._WatchListItem.Tehran))
-		for _, g := range a._WatchListItem.Tehran {
-			if a.IsSeqRunProcess {
-				a.avardAssetProcess(&wg, readfromLast, g)
-			} else {
-				go a.avardAssetProcess(&wg, readfromLast, g)
+	if timer_minute==nil {
+		//::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+		var wg sync.WaitGroup
+		if a.Provider == Avard {
+			wg.Add(len(a._WatchListItem.Tehran))
+			for _, g := range a._WatchListItem.Tehran {
+				if a.IsSeqRunProcess {
+					a.avardAssetProcess(&wg, readfromLast, g)
+				} else {
+					go a.avardAssetProcess(&wg, readfromLast, g)
+				}
+
+			}
+		} else if a.Provider == Binance {
+			wg.Add(len(a._WatchListItem.Crypto))
+			for _, g := range a._WatchListItem.Crypto {
+				if a.IsSeqRunProcess {
+					a.avardAssetProcess(&wg, readfromLast, g)
+				} else {
+					go a.avardAssetProcess(&wg, readfromLast, g)
+				}
+
+			}
+		}
+		wg.Wait()
+		//::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+	}	else{
+		tick := time.Tick(time.Duration(*timer_minute) * time.Minute)
+
+		isWorking := false
+		for {
+
+			if isWorking {
+				continue
 			}
 
-		}
-	} else if a.Provider == Binance {
-		wg.Add(len(a._WatchListItem.Crypto))
-		for _, g := range a._WatchListItem.Crypto {
-			if a.IsSeqRunProcess {
-				a.avardAssetProcess(&wg, readfromLast, g)
-			} else {
-				go a.avardAssetProcess(&wg, readfromLast, g)
-			}
+			select {
+			case <-tick:
+				fmt.Printf("timer -> %v\n",time.Now().Format(time.ANSIC))
+				isWorking = true
+				//::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+				var wg sync.WaitGroup
+				if a.Provider == Avard {
+					wg.Add(len(a._WatchListItem.Tehran))
+					for _, g := range a._WatchListItem.Tehran {
+						if a.IsSeqRunProcess {
+							a.avardAssetProcess(&wg, readfromLast, g)
+						} else {
+							go a.avardAssetProcess(&wg, readfromLast, g)
+						}
 
+					}
+				} else if a.Provider == Binance {
+					wg.Add(len(a._WatchListItem.Crypto))
+					for _, g := range a._WatchListItem.Crypto {
+						if a.IsSeqRunProcess {
+							a.avardAssetProcess(&wg, readfromLast, g)
+						} else {
+							go a.avardAssetProcess(&wg, readfromLast, g)
+						}
+
+					}
+				}
+				wg.Wait()
+				//::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+				isWorking = false
+			}
 		}
+
 	}
-	wg.Wait()
 	return nil
 }
