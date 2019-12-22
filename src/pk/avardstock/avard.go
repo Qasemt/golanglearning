@@ -65,7 +65,7 @@ type IStockProvider interface {
 		avardAssetProcess(parentWaitGroup *sync.WaitGroup, readFromLast bool, assetCode string, nameEn string, isIndex bool, provider EProvider) error
 
 	*/
-	Run(readfromLast bool, isSeq bool,timer_minute *int64) error
+	Run(readfromLast bool, isSeq bool, timer_minute *int64) error
 }
 type StockProvider struct {
 	IStockProvider
@@ -535,6 +535,49 @@ func (a StockProvider) OutStockList(dbLock *sync.Mutex) error {
 	fmt.Printf("has been successfully created : %s \n", s)
 	return nil
 }
+func (a StockProvider) OutTemWatchList(dbLock *sync.Mutex) error {
+
+	//var fullPath string
+	//:::::::::::::::::::::::::::::::::::::::::;
+	db, _, er := DatabaseInit("main", "")
+	if er != nil {
+		return er
+	}
+	defer a.closeMyDb(db)
+	items, err := GetNemadList(db, dbLock)
+	if err != nil {
+		return err
+	}
+	data := WatchListItem{}
+	t := []WatchStock{}
+	t1 := true
+	for _, k := range items {
+		//fmt.Printf("%v %v %v\n", k.EntityType, k.EntityId, k.TradeSymbol)
+
+		g := WatchStock{}
+		g.TimeFrame = []string{"d"}
+		g.NameEn = strconv.FormatInt(k.EntityId, 10)
+		g.AssetCode = strconv.FormatInt(k.EntityId, 10)
+		g.IsIndex = true
+		if k.EntityType=="index" {
+			g.IsIndex = false
+		}
+
+		g.IsAdj = &t1
+		t = append(t, g)
+	}
+	data.Tehran = t
+	data.Crypto = []WatchStock{}
+
+	//:::::::: write to csv
+	var s string = path.Join(GetRootCache(), "temp_watch_list.csv")
+	file, _ := json.MarshalIndent(data, "", " ")
+
+	_ = ioutil.WriteFile(s, file, 0644)
+
+	fmt.Printf("has been successfully created : %s \n", s)
+	return nil
+}
 
 //::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 func (a StockProvider) isHasTimeFrame(timeframe ETimeFrame, stock WatchStock) bool {
@@ -639,14 +682,14 @@ func (a StockProvider) avardAssetProcess(parentWaitGroup *sync.WaitGroup, readFr
 
 	return nil
 }
-func (a StockProvider) Run(readfromLast bool, isSeq bool,timer_minute *int64) error {
+func (a StockProvider) Run(readfromLast bool, isSeq bool, timer_minute *int64) error {
 	var e error
 	a._WatchListItem, e = a.ReadJsonWatchList()
 	a.IsSeqRunProcess = isSeq
 	if e != nil {
 		return errors.New(fmt.Sprintf("config not found "))
 	}
-	if timer_minute==nil {
+	if timer_minute == nil {
 		//::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 		var wg sync.WaitGroup
 		if a.Provider == Avard {
@@ -672,7 +715,7 @@ func (a StockProvider) Run(readfromLast bool, isSeq bool,timer_minute *int64) er
 		}
 		wg.Wait()
 		//::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-	}	else{
+	} else {
 		tick := time.Tick(time.Duration(*timer_minute) * time.Minute)
 
 		isWorking := false
@@ -684,7 +727,7 @@ func (a StockProvider) Run(readfromLast bool, isSeq bool,timer_minute *int64) er
 
 			select {
 			case <-tick:
-				fmt.Printf("timer -> %v\n",time.Now().Format(time.ANSIC))
+				fmt.Printf("timer -> %v\n", time.Now().Format(time.ANSIC))
 				isWorking = true
 				//::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 				var wg sync.WaitGroup

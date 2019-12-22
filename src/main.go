@@ -154,10 +154,20 @@ func commands(a []string) error {
 				return err
 			}
 		}
-
+		//_____________________________________________________________________________out  list
 		if _, ok := readArgs(a, "-list"); ok {
 			var dbLock sync.Mutex
 			e := tehran.SyncStockList(&dbLock)
+			if e != nil {
+				return errors.New(fmt.Sprintf("tehran failed: %v", e))
+			}
+			return nil
+		}
+
+		//_____________________________________________________________________________out  list
+		if _, ok := readArgs(a, "-tempwatchlist"); ok {
+			var dbLock sync.Mutex
+			e := tehran.OutTemWatchList(&dbLock)
 			if e != nil {
 				return errors.New(fmt.Sprintf("tehran failed: %v", e))
 			}
@@ -180,7 +190,7 @@ func commands(a []string) error {
 			}
 			return nil
 		}
-		//0000000000000
+		//_______________________________________________________________ syc db
 		wlist, er := tehran.ReadJsonWatchList()
 		if er != nil {
 			return errors.New(fmt.Sprintf("config not found "))
