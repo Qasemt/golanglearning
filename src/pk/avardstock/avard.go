@@ -1,12 +1,15 @@
 package avardstock
 
 import (
+	"context"
 	"encoding/csv"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/jinzhu/gorm"
 	. "github.com/qasemt/helper"
+	"golang.org/x/sync/semaphore"
+	_ "golang.org/x/sync/semaphore"
 	"io/ioutil"
 	"os"
 	"path"
@@ -74,6 +77,7 @@ type StockProvider struct {
 	IsSeqRunProcess bool
 	_WatchListItem  *WatchListItem
 	HttpLock        sync.Mutex
+	sem             *semaphore.Weighted
 }
 
 //::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
@@ -606,6 +610,9 @@ func (a StockProvider) isHasAdjust(stock WatchStock) bool {
 }
 
 func (a StockProvider) avardAssetProcess(parentWaitGroup *sync.WaitGroup, readFromLast bool, watchStock WatchStock) error {
+
+	a.sem.Acquire(context.Background(),1)
+	defer a.sem.Release(1)
 	defer parentWaitGroup.Done()
 	if watchStock.NameEn == "" || watchStock.AssetCode == "" {
 		//parentWaitGroup.Done()
@@ -684,6 +691,8 @@ func (a StockProvider) avardAssetProcess(parentWaitGroup *sync.WaitGroup, readFr
 }
 func (a StockProvider) Run(readfromLast bool, isSeq bool, timer_minute *int64) error {
 	var e error
+
+	a.sem = semaphore.NewWeighted(10)
 	a._WatchListItem, e = a.ReadJsonWatchList()
 	a.IsSeqRunProcess = isSeq
 	if e != nil {
