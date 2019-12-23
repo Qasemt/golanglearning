@@ -559,7 +559,7 @@ func (a StockProvider) OutTemWatchList(dbLock *sync.Mutex) error {
 		g.NameEn = strconv.FormatInt(k.EntityId, 10)
 		g.AssetCode = strconv.FormatInt(k.EntityId, 10)
 		g.IsIndex = true
-		if k.EntityType=="index" {
+		if strings.Contains(k.EntityType,"index") {
 			g.IsIndex = false
 		}
 
