@@ -85,9 +85,10 @@ func readArgs(a []string, key string) (string, bool) {
 	return "", false
 }
 
-//___________________________________________________________________
+//_______________________________________________________________________________ COMMANDS
 func commands(a []string) error {
 	var g *int64 = nil
+//_________________________________________________________________________________________________ CRYPTO
 	if len(a) > 0 && strings.ToLower(a[0]) == "crypto" {
 		binance := av.NewBinance(h.OneFolder)
 		if v, ok := readArgs(a, "cachepath="); ok {
@@ -109,7 +110,7 @@ func commands(a []string) error {
 		//0000000000000
 		list, er := binance.ReadJsonWatchList()
 		if er != nil {
-			return errors.New(fmt.Sprintf("config not found "))
+			return errors.New(fmt.Sprintf("config read failed [%v] ",er))
 		}
 		k := binance.SyncDb(list)
 		if k != nil {
@@ -124,7 +125,7 @@ func commands(a []string) error {
 
 		return nil
 	}
-
+//_________________________________________________________________________________________________ TEHRAN
 	if len(a) > 0 && strings.HasPrefix(strings.ToLower(a[0]), "tehran") {
 		tehran := av.NewTehran(h.OneFolder)
 		if v, ok := readArgs(a, "cachepath="); ok {
@@ -154,7 +155,7 @@ func commands(a []string) error {
 				return err
 			}
 		}
-		//_____________________________________________________________________________out  list
+		//:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::: OUT LIST
 		if _, ok := readArgs(a, "-list"); ok {
 			var dbLock sync.Mutex
 			e := tehran.SyncStockList(&dbLock)
@@ -164,7 +165,7 @@ func commands(a []string) error {
 			return nil
 		}
 
-		//_____________________________________________________________________________out  list
+		//:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::: TEMP WATCH LIST
 		if _, ok := readArgs(a, "-tempwatchlist"); ok {
 			var dbLock sync.Mutex
 			e := tehran.OutTemWatchList(&dbLock)
@@ -182,7 +183,7 @@ func commands(a []string) error {
 			isreadFromLast = true
 		}
 
-		if _, ok := readArgs(a, "-o"); ok {
+		if _, ok := readArgs(a, "-o"); ok { // list hameye stock ha...
 			var dbLock sync.Mutex
 			e := tehran.OutStockList(&dbLock)
 			if e != nil {
@@ -190,10 +191,10 @@ func commands(a []string) error {
 			}
 			return nil
 		}
-		//_______________________________________________________________ syc db
+		//:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::: SYNC DB
 		wlist, er := tehran.ReadJsonWatchList()
 		if er != nil {
-			return errors.New(fmt.Sprintf("config not found "))
+			return errors.New(fmt.Sprintf("config read failed [%v] ",er))
 		}
 		k := tehran.SyncDb(wlist)
 		if k != nil {
@@ -206,7 +207,7 @@ func commands(a []string) error {
 		}
 		return nil
 	}
-
+//_________________________________________________________________________________________________ BINANCE
 	if len(a) > 0 && strings.HasPrefix(strings.ToLower(a[0]), "binance") {
 		biance := av.NewBinance(h.OneFolder)
 		if v, ok := readArgs(a, "cachepath="); ok {
@@ -242,7 +243,7 @@ func commands(a []string) error {
 		//0000000000000
 		list, er := biance.ReadJsonWatchList()
 		if er != nil {
-			return errors.New(fmt.Sprintf("config not found "))
+			return errors.New(fmt.Sprintf("config read failed [%v] ",er))
 		}
 		k := biance.SyncDb(list)
 		if k != nil {

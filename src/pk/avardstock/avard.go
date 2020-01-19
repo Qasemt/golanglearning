@@ -365,7 +365,7 @@ func (a StockProvider) getDateRangeBy500Hours(start time.Time, end time.Time, fr
 	return day_rang
 }
 
-//::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+//:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::: dorost kardan db stock ha
 func (a StockProvider) SyncDb(wl *WatchListItem) error {
 
 	for _, f := range wl.Tehran {
@@ -583,6 +583,34 @@ func (a StockProvider) OutTemWatchList(dbLock *sync.Mutex) error {
 	return nil
 }
 
+func (a StockProvider) AddStockToWatchList(provider EProvider,stockName string ,stockCode string ,index_t bool,adj bool) error {
+	w, e := a.ReadJsonWatchList()
+
+	if e != nil {
+		return errors.New(fmt.Sprintf("config read failed [%v] ", e))
+	}
+	g := WatchStock{}
+	if provider == Avard {
+
+		g.TimeFrame = []string{"d"}
+		g.NameEn = stockName
+		g.AssetCode = stockCode
+		g.IsIndex = index_t
+		g.IsAdj = &adj
+		w.Tehran = append(w.Tehran, g)
+	}
+	if provider == Binance {
+		g.TimeFrame = []string{"d"}
+		g.NameEn = stockName
+		g.AssetCode = stockCode
+		g.IsIndex = index_t
+		g.IsAdj = &adj
+		w.Tehran = append(w.Crypto, g)
+	}
+
+	return nil
+}
+
 //::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 func (a StockProvider) isHasTimeFrame(timeframe ETimeFrame, stock WatchStock) bool {
 
@@ -696,7 +724,7 @@ func (a StockProvider) Run(readfromLast bool, isSeq bool, timer_minute *int64) e
 	a._WatchListItem, e = a.ReadJsonWatchList()
 	a.IsSeqRunProcess = isSeq
 	if e != nil {
-		return errors.New(fmt.Sprintf("config not found "))
+		return errors.New(fmt.Sprintf("config read failed [%v] ",e))
 	}
 	if timer_minute == nil {
 		//::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
