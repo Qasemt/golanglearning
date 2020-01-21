@@ -88,7 +88,7 @@ func readArgs(a []string, key string) (string, bool) {
 //_______________________________________________________________________________ COMMANDS
 func commands(a []string) error {
 	var g *int64 = nil
-//_________________________________________________________________________________________________ CRYPTO
+	//_________________________________________________________________________________________________ CRYPTO
 	if len(a) > 0 && strings.ToLower(a[0]) == "crypto" {
 		binance := av.NewBinance(h.OneFolder)
 		if v, ok := readArgs(a, "cachepath="); ok {
@@ -110,7 +110,7 @@ func commands(a []string) error {
 		//0000000000000
 		list, er := binance.ReadJsonWatchList()
 		if er != nil {
-			return errors.New(fmt.Sprintf("config read failed [%v] ",er))
+			return errors.New(fmt.Sprintf("config read failed [%v] ", er))
 		}
 		k := binance.SyncDb(list)
 		if k != nil {
@@ -125,19 +125,19 @@ func commands(a []string) error {
 
 		return nil
 	}
-//_________________________________________________________________________________________________ TEHRAN
+	//_________________________________________________________________________________________________ TEHRAN
 	if len(a) > 0 && strings.HasPrefix(strings.ToLower(a[0]), "tehran") {
 		tehran := av.NewTehran(h.OneFolder)
+
 		if v, ok := readArgs(a, "cachepath="); ok {
 			h.SetRootCache(v)
 		}
 
-
 		if v, ok := readArgs(a, "timer="); ok {
 
-			i, err :=  strconv.ParseInt(v, 10, 64)
+			i, err := strconv.ParseInt(v, 10, 64)
 			if err == nil {
-				g =&i
+				g = &i
 			} else {
 				return fmt.Errorf("timer not valid %v", err)
 			}
@@ -154,6 +154,13 @@ func commands(a []string) error {
 			if err != nil {
 				return err
 			}
+		}
+
+		//:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::: add stock to watch list
+		if _, ok := readArgs(a, "-add"); ok {
+
+		e:=	tehran.AddStockToWatchList(h.Avard, a[3], a[4], false, nil)
+			return e
 		}
 		//:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::: OUT LIST
 		if _, ok := readArgs(a, "-list"); ok {
@@ -194,7 +201,7 @@ func commands(a []string) error {
 		//:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::: SYNC DB
 		wlist, er := tehran.ReadJsonWatchList()
 		if er != nil {
-			return errors.New(fmt.Sprintf("config read failed [%v] ",er))
+			return errors.New(fmt.Sprintf("config read failed [%v] ", er))
 		}
 		k := tehran.SyncDb(wlist)
 		if k != nil {
@@ -207,7 +214,7 @@ func commands(a []string) error {
 		}
 		return nil
 	}
-//_________________________________________________________________________________________________ BINANCE
+	//_________________________________________________________________________________________________ BINANCE
 	if len(a) > 0 && strings.HasPrefix(strings.ToLower(a[0]), "binance") {
 		biance := av.NewBinance(h.OneFolder)
 		if v, ok := readArgs(a, "cachepath="); ok {
@@ -216,9 +223,9 @@ func commands(a []string) error {
 
 		if v, ok := readArgs(a, "timer="); ok {
 
-			i, err :=  strconv.ParseInt(v, 10, 64)
+			i, err := strconv.ParseInt(v, 10, 64)
 			if err == nil {
-				g =&i
+				g = &i
 			} else {
 				return fmt.Errorf("timer not valid %v", err)
 			}
@@ -243,7 +250,7 @@ func commands(a []string) error {
 		//0000000000000
 		list, er := biance.ReadJsonWatchList()
 		if er != nil {
-			return errors.New(fmt.Sprintf("config read failed [%v] ",er))
+			return errors.New(fmt.Sprintf("config read failed [%v] ", er))
 		}
 		k := biance.SyncDb(list)
 		if k != nil {

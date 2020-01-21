@@ -563,7 +563,7 @@ func (a StockProvider) OutTemWatchList(dbLock *sync.Mutex) error {
 		g.NameEn = strconv.FormatInt(k.EntityId, 10)
 		g.AssetCode = strconv.FormatInt(k.EntityId, 10)
 		g.IsIndex = true
-		if strings.Contains(k.EntityType,"index") {
+		if strings.Contains(k.EntityType, "index") {
 			g.IsIndex = false
 		}
 
@@ -583,7 +583,7 @@ func (a StockProvider) OutTemWatchList(dbLock *sync.Mutex) error {
 	return nil
 }
 
-func (a StockProvider) AddStockToWatchList(provider EProvider,stockName string ,stockCode string ,index_t bool,adj bool) error {
+func (a StockProvider) AddStockToWatchList(provider EProvider, stockName string, stockCode string, index_t bool, adj *bool) error {
 	w, e := a.ReadJsonWatchList()
 
 	if e != nil {
@@ -591,23 +591,47 @@ func (a StockProvider) AddStockToWatchList(provider EProvider,stockName string ,
 	}
 	g := WatchStock{}
 	if provider == Avard {
+		for _, l := range w.Tehran {
+		if l.AssetCode == stockCode{
+			fmt.Printf("stock is exist %v %v \n",stockCode,stockName)
+			return nil
+		}
+		}
 
 		g.TimeFrame = []string{"d"}
 		g.NameEn = stockName
 		g.AssetCode = stockCode
 		g.IsIndex = index_t
-		g.IsAdj = &adj
+		g.IsAdj = adj
+
 		w.Tehran = append(w.Tehran, g)
 	}
 	if provider == Binance {
+		for _, l := range w.Crypto {
+			if l.AssetCode == stockCode{
+				fmt.Printf("stock is exist %v %v \n",stockCode,stockName)
+				return nil
+			}
+		}
+
 		g.TimeFrame = []string{"d"}
 		g.NameEn = stockName
 		g.AssetCode = stockCode
 		g.IsIndex = index_t
-		g.IsAdj = &adj
-		w.Tehran = append(w.Crypto, g)
+		g.IsAdj = adj
+
+		w.Crypto = append(w.Crypto, g)
 	}
 
+	//+++++++++++++++++++++++++
+
+	s := path.Join(GetRootCache(), "watchList.json")
+	if err := os.Remove(s); err != nil && !os.IsNotExist(err) {
+		fmt.Printf("Failed to remove  file for %v", err)
+	}
+
+	file, _ := json.MarshalIndent(w, "", " ")
+	_ = ioutil.WriteFile(s, file, 0644)
 	return nil
 }
 
@@ -639,7 +663,7 @@ func (a StockProvider) isHasAdjust(stock WatchStock) bool {
 
 func (a StockProvider) avardAssetProcess(parentWaitGroup *sync.WaitGroup, readFromLast bool, watchStock WatchStock) error {
 
-	a.sem.Acquire(context.Background(),1)
+	a.sem.Acquire(context.Background(), 1)
 	defer a.sem.Release(1)
 	defer parentWaitGroup.Done()
 	if watchStock.NameEn == "" || watchStock.AssetCode == "" {
@@ -724,7 +748,7 @@ func (a StockProvider) Run(readfromLast bool, isSeq bool, timer_minute *int64) e
 	a._WatchListItem, e = a.ReadJsonWatchList()
 	a.IsSeqRunProcess = isSeq
 	if e != nil {
-		return errors.New(fmt.Sprintf("config read failed [%v] ",e))
+		return errors.New(fmt.Sprintf("config read failed [%v] ", e))
 	}
 	if timer_minute == nil {
 		//::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
