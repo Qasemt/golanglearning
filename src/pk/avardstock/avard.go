@@ -680,7 +680,7 @@ func (a StockProvider) avardAssetProcess(parentWaitGroup *sync.WaitGroup, readFr
 		} else {
 			wg.Add(8)
 		}*/
-		var num_d1 time.Duration = 4000
+		var num_d1 time.Duration = 20000
 		var num_h4 time.Duration = 1000
 		var num_h2 time.Duration = 500
 		var num_h1 time.Duration = 500
@@ -732,7 +732,7 @@ func (a StockProvider) avardAssetProcess(parentWaitGroup *sync.WaitGroup, readFr
 			a.procMake(StockQuery{WaitGroupobj: &wg, DBLock: &databaseLock, ReadfromLast: readFromLast, Stock: watchStock, Duration: -time.Duration(time.Hour * 24 * 360), EndTime: time.Now(), TimeFrame: H4, TypeChart: Normal})
 		}
 		if a.isHasTimeFrame(D1, watchStock) {
-			a.procMake(StockQuery{WaitGroupobj: &wg, DBLock: &databaseLock, ReadfromLast: readFromLast, Stock: watchStock, Duration: -time.Duration(time.Hour * 24 * 400), EndTime: time.Now(), TimeFrame: D1, TypeChart: Normal})
+			a.procMake(StockQuery{WaitGroupobj: &wg, DBLock: &databaseLock, ReadfromLast: readFromLast, Stock: watchStock, Duration: -time.Duration(time.Hour * 24 * 9000), EndTime: time.Now(), TimeFrame: D1, TypeChart: Normal})
 		}
 	} else {
 		return errors.New("not selected :( ")
