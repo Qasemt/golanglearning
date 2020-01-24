@@ -720,16 +720,16 @@ func (a StockProvider) avardAssetProcess(parentWaitGroup *sync.WaitGroup, readFr
 	} else if a.Provider == Binance {
 
 		if a.isHasTimeFrame(M15, watchStock) {
-			a.procMake(StockQuery{WaitGroupobj: &wg, DBLock: &databaseLock, ReadfromLast: readFromLast, Stock: watchStock, Duration: -time.Duration(time.Hour * 24 * 250), EndTime: time.Now(), TimeFrame: M15, TypeChart: Normal})
+			a.procMake(StockQuery{WaitGroupobj: &wg, DBLock: &databaseLock, ReadfromLast: readFromLast, Stock: watchStock, Duration: -time.Duration(time.Hour * 24 * 500), EndTime: time.Now(), TimeFrame: M15, TypeChart: Normal})
 		}
 		if a.isHasTimeFrame(H1, watchStock) {
-			a.procMake(StockQuery{WaitGroupobj: &wg, DBLock: &databaseLock, ReadfromLast: readFromLast, Stock: watchStock, Duration: -time.Duration(time.Hour * 24 * 250), EndTime: time.Now(), TimeFrame: H1, TypeChart: Normal})
+			a.procMake(StockQuery{WaitGroupobj: &wg, DBLock: &databaseLock, ReadfromLast: readFromLast, Stock: watchStock, Duration: -time.Duration(time.Hour * 24 * 500), EndTime: time.Now(), TimeFrame: H1, TypeChart: Normal})
 		}
 		if a.isHasTimeFrame(H2, watchStock) {
-			a.procMake(StockQuery{WaitGroupobj: &wg, DBLock: &databaseLock, ReadfromLast: readFromLast, Stock: watchStock, Duration: -time.Duration(time.Hour * 24 * 250), EndTime: time.Now(), TimeFrame: H2, TypeChart: Normal})
+			a.procMake(StockQuery{WaitGroupobj: &wg, DBLock: &databaseLock, ReadfromLast: readFromLast, Stock: watchStock, Duration: -time.Duration(time.Hour * 24 * 500), EndTime: time.Now(), TimeFrame: H2, TypeChart: Normal})
 		}
 		if a.isHasTimeFrame(H4, watchStock) {
-			a.procMake(StockQuery{WaitGroupobj: &wg, DBLock: &databaseLock, ReadfromLast: readFromLast, Stock: watchStock, Duration: -time.Duration(time.Hour * 24 * 360), EndTime: time.Now(), TimeFrame: H4, TypeChart: Normal})
+			a.procMake(StockQuery{WaitGroupobj: &wg, DBLock: &databaseLock, ReadfromLast: readFromLast, Stock: watchStock, Duration: -time.Duration(time.Hour * 24 * 1000), EndTime: time.Now(), TimeFrame: H4, TypeChart: Normal})
 		}
 		if a.isHasTimeFrame(D1, watchStock) {
 			a.procMake(StockQuery{WaitGroupobj: &wg, DBLock: &databaseLock, ReadfromLast: readFromLast, Stock: watchStock, Duration: -time.Duration(time.Hour * 24 * 9000), EndTime: time.Now(), TimeFrame: D1, TypeChart: Normal})
