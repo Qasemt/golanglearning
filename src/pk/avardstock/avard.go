@@ -41,13 +41,19 @@ func timeFromUnixTimestampFloat(raw interface{}) (time.Time, error) {
 	return time.Unix(0, int64(ts)*int64(time.Millisecond)), nil
 }
 
-type stocktemp struct {
-	Time float64 ` json:"time"`
-	O    float64 `json:"open"`
-	H    float64 `json:"high"`
-	L    float64 `json:"low"`
-	C    float64 `json:"close"`
-	V    float64 `json:"volume"`
+
+type Rahavard_Data struct {
+	Data []struct {
+		AssetID interface{} `json:"asset_id"`
+		Time    float64     `json:"time"`
+		O    float64     `json:"open"`
+		H    float64     `json:"high"`
+		L     float64     `json:"low"`
+		C   float64     `json:"close"`
+		V  float64         `json:"volume"`
+	} `json:"data"`
+	NextTime interface{} `json:"nextTime"`
+	NoData   interface{} `json:"noData"`
 }
 
 type dbItem struct {
@@ -452,14 +458,15 @@ func (a StockProvider) SyncStockList(dbLock *sync.Mutex) error {
 	errAsset := GetJson("https://rahavard365.com/api/search/items?type=asset", &rawsAsset, &a.HttpLock)
 
 	if errAsset != nil {
+		fmt.Printf("error -> getjson() -> %v \n",errAsset)
 		return errAsset
 	}
 	errIndex := GetJson("https://rahavard365.com/api/search/items?type=index", &rawsIndex, &a.HttpLock)
 
 	if errIndex != nil {
+		fmt.Printf("error -> getjson() -> %v \n",errAsset)
 		return errIndex
 	}
-
 	if rawsAsset.Data == nil || rawsIndex.Data == nil {
 		return errors.New("SyncStockList failed ... ")
 	}
