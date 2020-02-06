@@ -182,6 +182,9 @@ func (a StockProvider) make(sq StockQuery) error {
 			l := a.getDateRangeBy500Hours(h.Begin, h.End, sq.TimeFrame)
 
 			for _, h1 := range l {
+				if GetVerbose(){
+					fmt.Printf("_______________________\n");
+				}
 				raws, e := a.downloadAsset(sq, h1)
 				if e != nil {
 					fmt.Printf("make()-> %v | %v | %v\n", sq.Stock.NameEn, sq.TimeFrame.ToString2(), e)
@@ -197,6 +200,9 @@ func (a StockProvider) make(sq StockQuery) error {
 			l := a.getDateRangeBy500Hours(h.Begin, h.End, sq.TimeFrame)
 
 			for _, h1 := range l {
+				if GetVerbose(){
+					fmt.Printf("_______________________\n");
+				}
 				raws, e := a.downloadAsset(sq, h1)
 				if e != nil {
 					return e
@@ -211,7 +217,7 @@ func (a StockProvider) make(sq StockQuery) error {
 
 	//::::::::::::::::::::::::::::::::::::::::: INSERT TO DATABASE
 	{
-		fmt.Println(a.Provider.ToString(), "->", "Type", sq.TypeChart.ToTypeChartStr(), "asset ", sq.Stock.NameEn, "time frame ", sq.TimeFrame.ToString(), "load from net : ", len(itemsRaws))
+		fmt.Println(a.Provider.ToString(), "->>", "Type", sq.TypeChart.ToTypeChartStr(), "asset ", sq.Stock.NameEn, "time frame ", sq.TimeFrame.ToString(), "load from net : ", len(itemsRaws))
 		if len(itemsRaws) > 0 {
 			InsertStocks(db, sq.DBLock, last, sq.Stock.IsIndex, itemsRaws, sq.Stock.AssetCode, sq.TimeFrame, sq.TypeChart)
 			//if err != nil {
@@ -281,6 +287,8 @@ func (a StockProvider) make(sq StockQuery) error {
 		}
 		//fmt.Println("final :", len(itemsFinal))
 	}
+
+
 	return nil
 }
 func (a StockProvider) closeMyDb(d *gorm.DB) {
@@ -306,6 +314,9 @@ func (a StockProvider) getDateRangeYears(duration time.Duration, end time.Time) 
 	return day_rang
 }
 func (a StockProvider) getDateRangeBy500Hours(start time.Time, end time.Time, frame ETimeFrame) []TimeRange {
+	if GetVerbose(){
+		fmt.Printf("download time range with 500 split -> s : %v e: %v \n",QTime{start}.ToString(),QTime{end}.ToString());
+	}
 	day_rang := []TimeRange{}
 	var diff float64
 	switch frame {
@@ -325,12 +336,13 @@ func (a StockProvider) getDateRangeBy500Hours(start time.Time, end time.Time, fr
 		}
 	case D1:
 		{
-			var d1 TimeRange
+			/*var d1 TimeRange
 			d1.File_name = TimeToString(start, "yyyymmdd") + ".csv"
 			d1.Begin = start
 			d1.End = end
 			day_rang = append(day_rang, d1)
-			return day_rang
+			return day_rang*/
+			diff = (end.Sub(start).Hours() / 24) / 499 //8760 hour = years
 		}
 	}
 
@@ -361,7 +373,7 @@ func (a StockProvider) getDateRangeBy500Hours(start time.Time, end time.Time, fr
 			}
 		case D1:
 			{
-
+				t2 = t1.Add((time.Hour * 24) * time.Duration(500))
 			}
 		}
 		//::::::::::::::::::::::::::::::::::::::

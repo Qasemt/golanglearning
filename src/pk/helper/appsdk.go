@@ -184,7 +184,7 @@ func (t  QTime) ToString() string {
 func (t TimeRange) ToString() string {
 	b:=QTime{t.Begin}
 	e:=QTime{t.End}
-	r := fmt.Sprintf("B: %v -> %v| E: %v -> %v",b.ToString(),b.Unix(),e.ToString(),e.Unix())
+	r := fmt.Sprintf("B: %v -> %v | E: %v -> %v",b.ToString(),b.Unix(),e.ToString(),e.Unix())
 	return r
 }
 

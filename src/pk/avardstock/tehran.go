@@ -52,7 +52,7 @@ func (jar *Jar) Cookies(u *url.URL) []*http.Cookie {
 
 func (a TehranLoader) downloadAsset(sq StockQuery, item TimeRange) ([]StockFromWebService, error) {
 	if GetVerbose(){
-		fmt.Println("download time range -> ",item.ToString());
+		fmt.Println("downloadAsset  time between -> ",item.ToString());
 	}
 	var _rawKines = []StockFromWebService{}
 	startStr := strconv.FormatInt(item.Begin.Unix(), 10)
@@ -104,7 +104,9 @@ func (a TehranLoader) downloadAsset(sq StockQuery, item TimeRange) ([]StockFromW
 		itemsFinal = append(itemsFinal, v)
 
 	}
-
+	if GetVerbose(){
+		fmt.Printf("downloadAsset # %v Records\n",len(itemsFinal));
+	}
 	return itemsFinal, nil
 }
 
