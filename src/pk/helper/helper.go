@@ -154,9 +154,9 @@ func CreateWatchList(outPath string) error {
 func UnixMilli(t time.Time) int64 {
 	return t.Round(time.Millisecond).UnixNano() / (int64(time.Millisecond) / int64(time.Nanosecond))
 }
-func UnixTimeToTime(millis int64) time.Time {
+func UnixTimeToTime(millis int64) QTime {
 	//return time.Unix(0, millis*int64(time.Millisecond))
-	tm := time.Unix(millis, 0)
+	tm := QTime{time.Unix(millis, 0)}
 	return tm
 }
 func IsExist(p string) bool {
