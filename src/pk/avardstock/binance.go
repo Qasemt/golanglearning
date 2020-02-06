@@ -18,6 +18,9 @@ func NewBinance(store_mode EFolderStoreMode) *BinanceLoader {
 }
 
 func (a BinanceLoader) downloadAsset(sq StockQuery, item TimeRange) ([]StockFromWebService, error) {
+	if GetVerbose(){
+		fmt.Println("download time range -> ",item.ToString());
+	}
 	var _rawKines = []StockFromWebService{}
 	startStr := strconv.FormatInt(UnixMilli(item.Begin), 10)
 	endStr := strconv.FormatInt(UnixMilli(item.End), 10)

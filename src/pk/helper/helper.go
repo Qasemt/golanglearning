@@ -25,6 +25,7 @@ var _secret string
 
 var is_Socks bool
 var mRootCachePath string
+var _verboe bool
 
 //:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::: set
 func SetProxy(v string, is_socks bool) error {
@@ -47,7 +48,9 @@ func SetAPIKey(v string) {
 func SetRootCache(p string) {
 	mRootCachePath = p
 }
-
+func SetVerbose(b bool){
+	_verboe =b;
+}
 //:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::: get
 func GetRootCache() string {
 	if mRootCachePath == "" {
@@ -64,7 +67,9 @@ func GetSecret() string {
 func GetAPIKey() string {
 	return _apikey
 }
-
+func GetVerbose() bool{
+	return _verboe;
+}
 //_______________________________________________________________________ create File watch list and info dt
 /*txtinfo.inf*/
 func CreateconfigTxtinfo(outPath string) error {
@@ -248,6 +253,9 @@ func ToINT64(v string) int64 {
 
 func GetJson(url_path string, target_object_json interface{},mux *sync.Mutex) error {
 	mux.Lock()
+	if GetVerbose() {
+		fmt.Println("GetJson -> ", url_path)
+	}
 	defer mux.Unlock()
 	//https://github.com/binance-exchange/go-binance/blob/1af034307da53bf592566c5c8a90856ddb5b34a4/util.go#L49
 	//fmt.Println(url_path)
@@ -313,6 +321,9 @@ func GetJson(url_path string, target_object_json interface{},mux *sync.Mutex) er
 }
 func GetJsonBin(url_path string, target_object_json interface{},mux *sync.Mutex) error {
 	//fmt.Println(url_path)
+	if GetVerbose() {
+		fmt.Println("GetJson -> ", url_path)
+	}
 	c := &ClientHelper{
 		window: 5000,
 		apikey: GetAPIKey(),

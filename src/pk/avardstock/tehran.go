@@ -51,6 +51,9 @@ func (jar *Jar) Cookies(u *url.URL) []*http.Cookie {
 }
 
 func (a TehranLoader) downloadAsset(sq StockQuery, item TimeRange) ([]StockFromWebService, error) {
+	if GetVerbose(){
+		fmt.Println("download time range -> ",item.ToString());
+	}
 	var _rawKines = []StockFromWebService{}
 	startStr := strconv.FormatInt(item.Begin.Unix(), 10)
 	endStr := strconv.FormatInt(item.End.Unix(), 10)
