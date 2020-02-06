@@ -25,7 +25,7 @@ var _secret string
 
 var is_Socks bool
 var mRootCachePath string
-
+var _verboe bool
 //:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::: set
 func SetProxy(v string, is_socks bool) error {
 
@@ -47,7 +47,12 @@ func SetAPIKey(v string) {
 func SetRootCache(p string) {
 	mRootCachePath = p
 }
-
+func SetVerbose(b bool){
+	_verboe =b;
+}
+func GetVerbose() bool{
+	return _verboe;
+}
 //:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::: get
 func GetRootCache() string {
 	if mRootCachePath == "" {
@@ -88,7 +93,7 @@ func CreateconfigTxtinfo(outPath string) error {
 	return nil
 }
 func CreateWatchList(outPath string) error {
-	f :=false
+	f := false
 	s := path.Join(outPath, "watchList.json")
 	if IsExist(s) {
 		return nil
@@ -97,45 +102,42 @@ func CreateWatchList(outPath string) error {
 
 		Tehran: []WatchStock{
 			{
-				NameEn:"vaghadir",
-				AssetCode:"66",
-				IsIndex: false,
-				TimeFrame:[]string{},
-				IsAdj:&f,
+				NameEn:    "vaghadir",
+				AssetCode: "66",
+				IsIndex:   false,
+				TimeFrame: []string{},
+				IsAdj:     &f,
 			},
 			{
-				NameEn:"Senosa",
-				AssetCode:"425",
-				IsIndex: false,
-				TimeFrame:[]string{},
-				IsAdj:&f,
+				NameEn:    "Senosa",
+				AssetCode: "425",
+				IsIndex:   false,
+				TimeFrame: []string{},
+				IsAdj:     &f,
 			},
 			{
-				NameEn:"sefars",
-				AssetCode:"400",
-				IsIndex: false,
-				TimeFrame:[]string{},
-				IsAdj:&f,
+				NameEn:    "sefars",
+				AssetCode: "400",
+				IsIndex:   false,
+				TimeFrame: []string{},
+				IsAdj:     &f,
 			},
 			{
-				NameEn:"vanovin",
-				AssetCode:"393",
-				IsIndex: false,
-				TimeFrame:[]string{},
-				IsAdj:&f,
+				NameEn:    "vanovin",
+				AssetCode: "393",
+				IsIndex:   false,
+				TimeFrame: []string{},
+				IsAdj:     &f,
 			},
-
 		},
 
 		Crypto: []WatchStock{
 			{
-				NameEn:"BTCUSDT",
-				AssetCode:"BTCUSDT",
-				IsIndex: false,
-				TimeFrame:[]string{},
+				NameEn:    "BTCUSDT",
+				AssetCode: "BTCUSDT",
+				IsIndex:   false,
+				TimeFrame: []string{},
 			},
-
-
 		},
 	}
 
@@ -147,12 +149,14 @@ func CreateWatchList(outPath string) error {
 }
 
 func UnixMilli(t time.Time) int64 {
-	return t.Round(time.Millisecond).UnixNano() / (int64(time.Millisecond) / int64(time.Nanosecond))
+	//return t.Round(time.Millisecond).UnixNano() / (int64(time.Millisecond) / int64(time.Nanosecond))
+	return t.Unix()
 }
-func UnixTimeToTime(millis int64) time.Time {
-	//return time.Unix(0, millis*int64(time.Millisecond))
-	tm := time.Unix(millis, 0)
-	return tm
+func UnixTimeToTime(millis int64) QTime {
+	b := QTime{time.Unix(0, millis*int64(time.Millisecond))}
+	return b
+	//tm := time.Unix(millis, 0)
+	//return tm
 }
 func IsExist(p string) bool {
 	res := false
@@ -190,19 +194,19 @@ func TimeToString(t time.Time, format string) string {
 	return formatted
 }
 
-func UnixTimeStrToFormatDT(t time.Time, is_date bool,tf ETimeFrame) string {
+func UnixTimeStrToFormatDT(t time.Time, is_date bool, tf ETimeFrame) string {
 	var formatted string
 	if is_date {
 
 		formatted = fmt.Sprintf("%4d%02d%02d",
 			t.Year(), t.Month(), t.Day())
 	} else {
-		if tf ==D1 {
+		if tf == D1 {
 			formatted = fmt.Sprintf("%02d%02d%02d",
 				t.Hour(), t.Minute(), 0)
-		}else {
+		} else {
 			formatted = fmt.Sprintf("%02d%02d%02d",
-				t.Hour(), t.Minute(),t.Second())
+				t.Hour(), t.Minute(), t.Second())
 		}
 	}
 
@@ -246,12 +250,15 @@ func ToINT64(v string) int64 {
 	return res
 }
 
-func GetJson(url_path string, target_object_json interface{},mux *sync.Mutex) error {
+func GetJson(url_path string, target_object_json interface{}, mux *sync.Mutex) error {
+	if GetVerbose() {
+		fmt.Println("GetJson-> ", url_path)
+	}
 	mux.Lock()
 	defer mux.Unlock()
 	//https://github.com/binance-exchange/go-binance/blob/1af034307da53bf592566c5c8a90856ddb5b34a4/util.go#L49
 	//fmt.Println(url_path)
-	var _timeout time.Duration= 60
+	var _timeout time.Duration = 60
 
 	var myClient *http.Client
 	if GetProxy() != "" {
@@ -276,7 +283,7 @@ func GetJson(url_path string, target_object_json interface{},mux *sync.Mutex) er
 
 	} else {
 		var myTransport http.RoundTripper = &http.Transport{
-		//	Proxy:                 http.ProxyFromEnvironment,
+			//	Proxy:                 http.ProxyFromEnvironment,
 			ResponseHeaderTimeout: time.Second * _timeout,
 		}
 		//myClient = &http.Client{Timeout: 120 * time.Second}
@@ -294,24 +301,24 @@ func GetJson(url_path string, target_object_json interface{},mux *sync.Mutex) er
 	req.Header.Add("Cookie", "_ga=GA1.2.2095670304.1547216406; _hjid=5dd39770-33ce-46d9-9979-a95820cfdb24; .rahavard365auth=23917073533FDBF44324DBDD56B7AC020AFD4221A05ECBC4C7BD09AA8B25016CB9A430AB550F236EB9B55ECB88A3629EA1FD02C85306F806C4B88E272E1B1E69DC62AF5EC38B78FE1FE20CA4A89687024E0CBF2BFBE31065C66B6A7E886EEBBA96A24EFC37830CF60F488A0CB69C3FE82A8ED3A664129F430C628B3A4B9542023517EC045ACBADAED4EBE87AA151DC564096087D563C704FF746134BF44CDBE995401844724BCB99F2643335A497245A4214452DBE81EC6765DF53B11E79B60E67894357D2151D2B8BB9740D827D86CF448ED640E33732BF2895C28A0602945A38C71F104538C07FD011420D64CA361D; _gid=GA1.2.275768049.1580750965")
 	resp, err := myClient.Do(req)
 	if err != nil {
-		return  err
+		return err
 	}
 
 	defer resp.Body.Close()
 
 	response, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return  err
+		return err
 	}
 	if resp.StatusCode != http.StatusOK {
-	//	return  fmt.Errorf("status %d: %v", resp.StatusCode, string(response))
-		return  fmt.Errorf("HTTP Error Status %v ",resp.StatusCode)
+		//	return  fmt.Errorf("status %d: %v", resp.StatusCode, string(response))
+		return fmt.Errorf("HTTP Error Status %v ", resp.StatusCode)
 	}
 
 	json.Unmarshal(response, &target_object_json)
-	return  err
+	return err
 }
-func GetJsonBin(url_path string, target_object_json interface{},mux *sync.Mutex) error {
+func GetJsonBin(url_path string, target_object_json interface{}, mux *sync.Mutex) error {
 	//fmt.Println(url_path)
 	c := &ClientHelper{
 		window: 5000,
@@ -319,7 +326,7 @@ func GetJsonBin(url_path string, target_object_json interface{},mux *sync.Mutex)
 		secret: GetSecret(),
 		client: http.DefaultClient,
 	}
-	res, err := c.do(http.MethodGet, url_path, nil, false, false,mux)
+	res, err := c.do(http.MethodGet, url_path, nil, false, false, mux)
 
 	if err != nil {
 		return err

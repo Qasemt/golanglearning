@@ -5,7 +5,9 @@ import (
 	"sync"
 	"time"
 )
-
+type QTime struct {
+	time.Time
+}
 //::::::::::::::::::::::::::::: INTERFACE
 
 //::::::::::::::::::::::::::::: STRUCT
@@ -36,7 +38,9 @@ type TimeRange struct {
 	File_name string
 	Begin     time.Time
 	End       time.Time
+
 }
+
 type WatchStock struct {
 	AssetCode string   `json:"asset_code"`
 	NameEn    string   `json:"nameEn"`
@@ -168,3 +172,19 @@ func (e ETimeFrame) ToMinuth() int {
 	}
 	return 0
 }
+//::::::::::::::::::::::::::::: STRUCT TO STRING
+func (t  QTime) ToString() string {
+	r := fmt.Sprintf("%4d-%02d-%02d %02d:%02d:%02d",t.Year(), t.Month(), t.Day(), t.Hour(), t.Minute(), t.Second())
+	return r
+}
+/*func (t  QTime) T() int64 {
+	return t.Round(time.Millisecond).UnixNano() / (int64(time.Millisecond) / int64(time.Nanosecond))
+}*/
+
+func (t TimeRange) ToString() string {
+	b:=QTime{t.Begin}
+	e:=QTime{t.End}
+	r := fmt.Sprintf("B: %v -> %v| E: %v -> %v",b.ToString(),b.Unix(),e.ToString(),e.Unix())
+	return r
+}
+

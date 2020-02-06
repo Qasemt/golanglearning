@@ -88,6 +88,9 @@ func readArgs(a []string, key string) (string, bool) {
 //_______________________________________________________________________________ COMMANDS
 func commands(a []string) error {
 	var g *int64 = nil
+	if _, ok := readArgs(a, "-v"); ok {
+		h.SetVerbose(true)
+	}
 	//_________________________________________________________________________________________________ CRYPTO
 	if len(a) > 0 && strings.ToLower(a[0]) == "crypto" {
 		binance := av.NewBinance(h.OneFolder)
@@ -271,6 +274,8 @@ func commands(a []string) error {
 
 func main() {
 
+//t:=	h.UnixTimeToTime(1580720399000);
+//fmt.Printf("%v",t);
 	e := commands(os.Args[1:])
 	if e != nil {
 		fmt.Printf(e.Error())

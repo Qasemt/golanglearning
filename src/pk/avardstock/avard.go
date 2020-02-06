@@ -44,7 +44,7 @@ func timeFromUnixTimestampFloat(raw interface{}) (time.Time, error) {
 
 type Rahavard_Data struct {
 	Data []struct {
-		AssetID interface{} `json:"asset_id"`
+
 		Time    float64     `json:"time"`
 		O    float64     `json:"open"`
 		H    float64     `json:"high"`
@@ -149,6 +149,9 @@ func (a StockProvider) make(sq StockQuery) error {
 	if sq.ReadfromLast {
 		//::::::::::::::::::::::::::::::::::::::::: Get LAst RECORD FROM DATABASE
 		e := getLastRecord(db, sq.DBLock, sq.Stock.AssetCode, sq.TimeFrame.ToMinuth(), sq.TypeChart, &last)
+		if GetVerbose() {
+			fmt.Printf("last record -> timeframe : %v  time : %v\n", sq.TimeFrame.ToString2(), UnixTimeToTime(last.Time).ToString());
+		}
 		if e != nil {
 			return e
 		}
@@ -172,6 +175,10 @@ func (a StockProvider) make(sq StockQuery) error {
 	var itemsRaws []StockFromWebService
 	if a.Provider == Avard {
 		for _, h := range times {
+
+			if GetVerbose() {
+				fmt.Printf("times range -> %v\n", h.ToString())
+			}
 			l := a.getDateRangeBy500Hours(h.Begin, h.End, sq.TimeFrame)
 
 			for _, h1 := range l {
@@ -687,7 +694,7 @@ func (a StockProvider) avardAssetProcess(parentWaitGroup *sync.WaitGroup, readFr
 		} else {
 			wg.Add(8)
 		}*/
-		var num_d1 time.Duration = 20000
+		var num_d1 time.Duration = 15000 //1979-01-12
 		var num_h4 time.Duration = 1000
 		var num_h2 time.Duration = 500
 		var num_h1 time.Duration = 500
