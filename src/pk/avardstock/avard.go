@@ -43,17 +43,15 @@ func timeFromUnixTimestampFloat(raw interface{}) (time.Time, error) {
 
 
 type Rahavard_Data struct {
-	Data []struct {
 
-		Time    float64     `json:"time"`
-		O    float64     `json:"open"`
-		H    float64     `json:"high"`
-		L     float64     `json:"low"`
-		C   float64     `json:"close"`
-		V  float64         `json:"volume"`
-	} `json:"data"`
-	NextTime interface{} `json:"nextTime"`
-	NoData   interface{} `json:"noData"`
+	AssetID interface{} `json:"asset_id"`
+	Time    float64     `json:"time"`
+	O    float64     `json:"open"`
+	H    float64     `json:"high"`
+	L     float64     `json:"low"`
+	C   float64     `json:"close"`
+	V float64         `json:"volume"`
+
 }
 
 type dbItem struct {

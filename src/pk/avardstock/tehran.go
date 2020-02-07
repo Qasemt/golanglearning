@@ -79,8 +79,7 @@ func (a TehranLoader) downloadAsset(sq StockQuery, item TimeRange) ([]StockFromW
 	}
 	//var raws []interface{}
 
-	var raw_obj3 Rahavard_Data
-	//var raw_obj2 DataListRahaAvard
+	var raw_obj3 []Rahavard_Data
 	var itemsFinal []StockFromWebService
 	err := GetJson("https://rahavard365.com/api/chart/bars?ticker=exchange."+isAssetStr+"%3A"+sq.Stock.AssetCode+"%3Areal_close"+typechart+"&resolution="+frame+"&startDateTime="+startStr+"&endDateTime="+endStr+"&firstDataRequest=true", &raw_obj3,&a.HttpLock)
 
@@ -93,7 +92,7 @@ func (a TehranLoader) downloadAsset(sq StockQuery, item TimeRange) ([]StockFromW
 		return nil, errors.New(fmt.Sprintf("downloadAsset failed ... %v\n", err))
 	}
 
-	for _, k := range raw_obj3.Data {
+	for _, k := range raw_obj3 {
 		var v StockFromWebService
 		v.Time = int64(k.Time)
 		v.O = k.O
