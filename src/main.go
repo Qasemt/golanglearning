@@ -91,6 +91,12 @@ func commands(a []string) error {
 	if _, ok := readArgs(a, "-v"); ok {
 		h.SetVerbose(true)
 	}
+	//_________________________________________________________________________________________________ LICENSE
+	if len(a) > 0 && strings.ToLower(a[0]) == "license" {
+		g := h.LicenseGen{}
+		g.Make("qasemt@gmail.com")
+		return nil
+	}
 	//_________________________________________________________________________________________________ CRYPTO
 	if len(a) > 0 && strings.ToLower(a[0]) == "crypto" {
 		binance := av.NewBinance(h.OneFolder)
@@ -162,7 +168,7 @@ func commands(a []string) error {
 		//:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::: add stock to watch list
 		if _, ok := readArgs(a, "-add"); ok {
 
-		e:=	tehran.AddStockToWatchList(h.Avard, a[3], a[4], false, nil)
+			e := tehran.AddStockToWatchList(h.Avard, a[3], a[4], false, nil)
 			return e
 		}
 		//:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::: OUT LIST
@@ -274,8 +280,8 @@ func commands(a []string) error {
 
 func main() {
 
-//t:=	h.UnixTimeToTime(1580720399000);
-//fmt.Printf("%v",t);
+	//t:=	h.UnixTimeToTime(1580720399000);
+	//fmt.Printf("%v",t);
 	e := commands(os.Args[1:])
 	if e != nil {
 		fmt.Printf(e.Error())

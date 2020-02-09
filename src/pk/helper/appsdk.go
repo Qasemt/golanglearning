@@ -5,12 +5,20 @@ import (
 	"sync"
 	"time"
 )
+
 type QTime struct {
 	time.Time
 }
+
 //::::::::::::::::::::::::::::: INTERFACE
 
 //::::::::::::::::::::::::::::: STRUCT
+type LicenseInfo struct {
+	Email 		string    `json:"email"`
+	CpuId 		string    `json:"cpuid"`
+	End   		time.Time `json:"end"` //time.Now().Add(time.Hour * 24 * 365), // 1 year
+	BinPath 	string   `json:"binpath"`
+}
 type StockQuery struct {
 	WaitGroupobj *sync.WaitGroup
 	DBLock       *sync.Mutex
@@ -38,7 +46,6 @@ type TimeRange struct {
 	File_name string
 	Begin     time.Time
 	End       time.Time
-
 }
 
 type WatchStock struct {
@@ -46,7 +53,7 @@ type WatchStock struct {
 	NameEn    string   `json:"nameEn"`
 	IsIndex   bool     `json:"is_index"`
 	TimeFrame []string `json:"time_frame"`
-	IsAdj 	  *bool  	`json:"is_adj"`
+	IsAdj     *bool    `json:"is_adj"`
 }
 type WatchListItem struct {
 	Apikey string
@@ -172,19 +179,20 @@ func (e ETimeFrame) ToMinuth() int {
 	}
 	return 0
 }
+
 //::::::::::::::::::::::::::::: STRUCT TO STRING
-func (t  QTime) ToString() string {
-	r := fmt.Sprintf("%4d-%02d-%02d %02d:%02d:%02d",t.Year(), t.Month(), t.Day(), t.Hour(), t.Minute(), t.Second())
+func (t QTime) ToString() string {
+	r := fmt.Sprintf("%4d-%02d-%02d %02d:%02d:%02d", t.Year(), t.Month(), t.Day(), t.Hour(), t.Minute(), t.Second())
 	return r
 }
+
 /*func (t  QTime) T() int64 {
 	return t.Round(time.Millisecond).UnixNano() / (int64(time.Millisecond) / int64(time.Nanosecond))
 }*/
 
 func (t TimeRange) ToString() string {
-	b:=QTime{t.Begin}
-	e:=QTime{t.End}
-	r := fmt.Sprintf("B: %v -> %v | E: %v -> %v",b.ToString(),b.Unix(),e.ToString(),e.Unix())
+	b := QTime{t.Begin}
+	e := QTime{t.End}
+	r := fmt.Sprintf("B: %v -> %v | E: %v -> %v", b.ToString(), b.Unix(), e.ToString(), e.Unix())
 	return r
 }
-
