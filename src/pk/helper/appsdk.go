@@ -13,12 +13,7 @@ type QTime struct {
 //::::::::::::::::::::::::::::: INTERFACE
 
 //::::::::::::::::::::::::::::: STRUCT
-type LicenseInfo struct {
-	Email 		string    `json:"email"`
-	CpuId 		string    `json:"cpuid"`
-	End   		time.Time `json:"end"` //time.Now().Add(time.Hour * 24 * 365), // 1 year
-	BinPath 	string   `json:"binpath"`
-}
+
 type StockQuery struct {
 	WaitGroupobj *sync.WaitGroup
 	DBLock       *sync.Mutex

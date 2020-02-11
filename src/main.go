@@ -94,7 +94,7 @@ func commands(a []string) error {
 	//_________________________________________________________________________________________________ LICENSE
 	if len(a) > 0 && strings.ToLower(a[0]) == "license" {
 		g := h.LicenseGen{}
-		g.Make("qasemt@gmail.com")
+		g.Test()
 		return nil
 	}
 	//_________________________________________________________________________________________________ CRYPTO
@@ -277,7 +277,6 @@ func commands(a []string) error {
 	return errors.New(s)
 
 }
-
 func main() {
 
 	//t:=	h.UnixTimeToTime(1580720399000);
