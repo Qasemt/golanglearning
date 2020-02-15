@@ -251,6 +251,14 @@ func ToINT64(v string) int64 {
 	}
 	return res
 }
+func ToINT32(v string) int32 {
+
+	res, err :=strconv.Atoi(v)
+	if err != nil {
+		res = 0
+	}
+	return int32(res)
+}
 
 func GetJson(url_path string, target_object_json interface{},mux *sync.Mutex) error {
 	mux.Lock()

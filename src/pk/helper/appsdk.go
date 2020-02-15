@@ -111,8 +111,6 @@ func (e EProvider) ToString() string {
 	switch e {
 	case Binance:
 		return "binance"
-	case Avard:
-		return "avard"
 
 	default:
 		return "aa"

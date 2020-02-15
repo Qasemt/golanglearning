@@ -41,17 +41,14 @@ func timeFromUnixTimestampFloat(raw interface{}) (time.Time, error) {
 	return time.Unix(0, int64(ts)*int64(time.Millisecond)), nil
 }
 
-
 type Rahavard_Data struct {
-
 	AssetID interface{} `json:"asset_id"`
 	Time    float64     `json:"time"`
-	O    float64     `json:"open"`
-	H    float64     `json:"high"`
-	L     float64     `json:"low"`
-	C   float64     `json:"close"`
-	V float64         `json:"volume"`
-
+	O       float64     `json:"open"`
+	H       float64     `json:"high"`
+	L       float64     `json:"low"`
+	C       float64     `json:"close"`
+	V       float64     `json:"volume"`
 }
 
 type dbItem struct {
@@ -148,7 +145,7 @@ func (a StockProvider) make(sq StockQuery) error {
 		//::::::::::::::::::::::::::::::::::::::::: Get LAst RECORD FROM DATABASE
 		e := getLastRecord(db, sq.DBLock, sq.Stock.AssetCode, sq.TimeFrame.ToMinuth(), sq.TypeChart, &last)
 		if GetVerbose() {
-			fmt.Printf("last record -> timeframe : %v  time : %v\n", sq.TimeFrame.ToString2(), UnixTimeToTime(last.Time).ToString());
+			fmt.Printf("last record -> timeframe : %v  time : %v\n", sq.TimeFrame.ToString2(), UnixTimeToTime(last.Time).ToString())
 		}
 		if e != nil {
 			return e
@@ -171,35 +168,13 @@ func (a StockProvider) make(sq StockQuery) error {
 	}
 
 	var itemsRaws []StockFromWebService
-	if a.Provider == Avard {
-		for _, h := range times {
-
-			if GetVerbose() {
-				fmt.Printf("times range -> %v\n", h.ToString())
-			}
-			l := a.getDateRangeBy500Hours(h.Begin, h.End, sq.TimeFrame)
-
-			for _, h1 := range l {
-				if GetVerbose(){
-					fmt.Printf("_______________________\n");
-				}
-				raws, e := a.downloadAsset(sq, h1)
-				if e != nil {
-					fmt.Printf("make()-> %v | %v | %v\n", sq.Stock.NameEn, sq.TimeFrame.ToString2(), e)
-					return e
-				}
-				itemsRaws = append(itemsRaws, raws...)
-			}
-
-		}
-
-	} else if a.Provider == Binance {
+	if a.Provider == Binance {
 		for _, h := range times {
 			l := a.getDateRangeBy500Hours(h.Begin, h.End, sq.TimeFrame)
 
 			for _, h1 := range l {
-				if GetVerbose(){
-					fmt.Printf("_______________________\n");
+				if GetVerbose() {
+					fmt.Printf("_______________________\n")
 				}
 				raws, e := a.downloadAsset(sq, h1)
 				if e != nil {
@@ -249,24 +224,6 @@ func (a StockProvider) make(sq StockQuery) error {
 			var fileName string = ""
 
 			switch a.Provider {
-			case Avard:
-				{
-					if a.FolderStoreMode == ByTimeFrame {
-						if sq.TypeChart == Normal {
-							dirCachePath = path.Join(GetRootCache(), "tehran", "normal", sq.TimeFrame.ToString())
-						} else {
-							dirCachePath = path.Join(GetRootCache(), "tehran", "Adjusted", sq.TimeFrame.ToString())
-						}
-
-					} else {
-						dirCachePath = path.Join(GetRootCache(), "tehran")
-					}
-					if sq.TypeChart == Normal {
-						fileName = fmt.Sprintf("%v_%v.csv", sq.Stock.NameEn, strings.ToLower(sq.TimeFrame.ToString2()))
-					} else {
-						fileName = fmt.Sprintf("%v_%v_%v.csv", sq.Stock.NameEn, strings.ToLower(sq.TimeFrame.ToString2()), "a")
-					}
-				}
 			case Binance:
 				{
 					if a.FolderStoreMode == ByTimeFrame {
@@ -285,7 +242,6 @@ func (a StockProvider) make(sq StockQuery) error {
 		}
 		//fmt.Println("final :", len(itemsFinal))
 	}
-
 
 	return nil
 }
@@ -312,8 +268,8 @@ func (a StockProvider) getDateRangeYears(duration time.Duration, end time.Time) 
 	return day_rang
 }
 func (a StockProvider) getDateRangeBy500Hours(start time.Time, end time.Time, frame ETimeFrame) []TimeRange {
-	if GetVerbose(){
-		fmt.Printf("download time range with 500 split -> s : %v e: %v \n",QTime{start}.ToString(),QTime{end}.ToString());
+	if GetVerbose() {
+		fmt.Printf("download time range with 500 split -> s : %v e: %v \n", QTime{start}.ToString(), QTime{end}.ToString())
 	}
 	day_rang := []TimeRange{}
 	var diff float64
@@ -446,83 +402,6 @@ func (a StockProvider) ReadJsonWatchList() (*WatchListItem, error) {
 	}
 	return &list, nil
 }
-func (a StockProvider) SyncStockList(dbLock *sync.Mutex) error {
-
-	//var fullPath string
-	//:::::::::::::::::::::::::::::::::::::::::;
-	db, _, er := DatabaseInit("main", "")
-	if er != nil {
-		return er
-	}
-	defer a.closeMyDb(db)
-	type NemadAvardRaw struct {
-		TypeId      string `json:"type_id"`
-		Type        string `json:"type"`
-		EntityId    string `json:"entity_id"`
-		EntityType  string `json:"entity_type"`
-		TradeSymbol string `json:"trade_symbol"`
-		Title       string `json:"title"`
-	}
-	type assetList struct {
-		Data  []NemadAvardRaw ` json:"data"`
-		Error string          ` json:"error"`
-		Meta  string          ` json:"meta"`
-	}
-
-	var rawsAsset assetList
-	var rawsIndex assetList
-
-	errAsset := GetJson("https://rahavard365.com/api/search/items?type=asset", &rawsAsset, &a.HttpLock)
-
-	if errAsset != nil {
-		fmt.Printf("error -> getjson() -> %v \n",errAsset)
-		return errAsset
-	}
-	errIndex := GetJson("https://rahavard365.com/api/search/items?type=index", &rawsIndex, &a.HttpLock)
-
-	if errIndex != nil {
-		fmt.Printf("error -> getjson() -> %v \n",errAsset)
-		return errIndex
-	}
-	if rawsAsset.Data == nil || rawsIndex.Data == nil {
-		return errors.New("SyncStockList failed ... ")
-	}
-
-	if len(rawsAsset.Data) == 0 || len(rawsIndex.Data) == 0 {
-		return errors.New("SyncStockList -> data from net is empty  ... ")
-	}
-	var Items []NemadAvard
-	for i := 0; i < len(rawsAsset.Data); i++ {
-		it := rawsAsset.Data[i]
-		n := NemadAvard{}
-		n.Title = it.Title
-		n.TradeSymbol = it.TradeSymbol
-		n.EntityType = it.EntityType
-		n.EntityId = ToINT64(it.EntityId)
-		n.Type = it.Type
-		n.TypeId = it.TypeId
-		Items = append(Items, n)
-	}
-
-	for i := 0; i < len(rawsIndex.Data); i++ {
-		it := rawsIndex.Data[i]
-		n := NemadAvard{}
-		n.Title = it.Title
-		n.TradeSymbol = it.TradeSymbol
-		n.EntityType = it.EntityType
-		n.EntityId = ToINT64(it.EntityId)
-		n.Type = it.Type
-		n.TypeId = it.TypeId
-		Items = append(Items, n)
-	}
-
-	e1 := InsertAssetInfoFromAvard(db, dbLock, Items)
-	if e1 != nil {
-		return e1
-	}
-
-	return nil
-}
 
 /*out stock */
 func (a StockProvider) OutStockList(dbLock *sync.Mutex) error {
@@ -614,26 +493,11 @@ func (a StockProvider) AddStockToWatchList(provider EProvider, stockName string,
 		return errors.New(fmt.Sprintf("config read failed [%v] ", e))
 	}
 	g := WatchStock{}
-	if provider == Avard {
-		for _, l := range w.Tehran {
-		if l.AssetCode == stockCode{
-			fmt.Printf("stock is exist %v %v \n",stockCode,stockName)
-			return nil
-		}
-		}
 
-		g.TimeFrame = []string{"d"}
-		g.NameEn = stockName
-		g.AssetCode = stockCode
-		g.IsIndex = index_t
-		g.IsAdj = adj
-
-		w.Tehran = append(w.Tehran, g)
-	}
 	if provider == Binance {
 		for _, l := range w.Crypto {
-			if l.AssetCode == stockCode{
-				fmt.Printf("stock is exist %v %v \n",stockCode,stockName)
+			if l.AssetCode == stockCode {
+				fmt.Printf("stock is exist %v %v \n", stockCode, stockName)
 				return nil
 			}
 		}
@@ -697,51 +561,7 @@ func (a StockProvider) avardAssetProcess(parentWaitGroup *sync.WaitGroup, readFr
 	}
 	var databaseLock sync.Mutex
 	var wg sync.WaitGroup
-	if a.Provider == Avard {
-
-		/*if watchStock.IsIndex == true {
-			wg.Add(2)
-		} else {
-			wg.Add(8)
-		}*/
-		var num_d1 time.Duration = 15000 //1979-01-12
-		var num_h4 time.Duration = 1000
-		var num_h2 time.Duration = 500
-		var num_h1 time.Duration = 500
-
-		if a.isHasTimeFrame(H1, watchStock) {
-			a.procMake(StockQuery{WaitGroupobj: &wg, DBLock: &databaseLock, ReadfromLast: readFromLast, Stock: watchStock, Duration: -time.Duration(time.Hour * 24 * num_h1), EndTime: time.Now(), TimeFrame: H1, TypeChart: Normal})
-		}
-		if a.isHasTimeFrame(D1, watchStock) {
-
-			a.procMake(StockQuery{WaitGroupobj: &wg, DBLock: &databaseLock, ReadfromLast: readFromLast, Stock: watchStock, Duration: -time.Duration(time.Hour * 24 * num_d1), EndTime: time.Now(), TimeFrame: D1, TypeChart: Normal})
-		}
-
-		if watchStock.IsIndex == false {
-			if a.isHasTimeFrame(H2, watchStock) {
-
-				a.procMake(StockQuery{WaitGroupobj: &wg, DBLock: &databaseLock, ReadfromLast: readFromLast, Stock: watchStock, Duration: -time.Duration(time.Hour * 24 * num_h2), EndTime: time.Now(), TimeFrame: H2, TypeChart: Normal})
-			}
-			if a.isHasTimeFrame(H4, watchStock) {
-
-				a.procMake(StockQuery{WaitGroupobj: &wg, DBLock: &databaseLock, ReadfromLast: readFromLast, Stock: watchStock, Duration: -time.Duration(time.Hour * 24 * num_h4), EndTime: time.Now(), TimeFrame: H4, TypeChart: Normal})
-			}
-			if a.isHasAdjust(watchStock) {
-				if a.isHasTimeFrame(H1, watchStock) {
-					a.procMake(StockQuery{WaitGroupobj: &wg, DBLock: &databaseLock, ReadfromLast: readFromLast, Stock: watchStock, Duration: -time.Duration(time.Hour * 24 * num_h1), EndTime: time.Now(), TimeFrame: H1, TypeChart: Adj})
-				}
-				if a.isHasTimeFrame(H2, watchStock) {
-					a.procMake(StockQuery{WaitGroupobj: &wg, DBLock: &databaseLock, ReadfromLast: readFromLast, Stock: watchStock, Duration: -time.Duration(time.Hour * 24 * num_h2), EndTime: time.Now(), TimeFrame: H2, TypeChart: Adj})
-				}
-				if a.isHasTimeFrame(H4, watchStock) {
-					a.procMake(StockQuery{WaitGroupobj: &wg, DBLock: &databaseLock, ReadfromLast: readFromLast, Stock: watchStock, Duration: -time.Duration(time.Hour * 24 * num_h4), EndTime: time.Now(), TimeFrame: H4, TypeChart: Adj})
-				}
-				if a.isHasTimeFrame(D1, watchStock) {
-					a.procMake(StockQuery{WaitGroupobj: &wg, DBLock: &databaseLock, ReadfromLast: readFromLast, Stock: watchStock, Duration: -time.Duration(time.Hour * 24 * num_d1), EndTime: time.Now(), TimeFrame: D1, TypeChart: Adj})
-				}
-			}
-		}
-	} else if a.Provider == Binance {
+	if a.Provider == Binance {
 
 		if a.isHasTimeFrame(M15, watchStock) {
 			a.procMake(StockQuery{WaitGroupobj: &wg, DBLock: &databaseLock, ReadfromLast: readFromLast, Stock: watchStock, Duration: -time.Duration(time.Hour * 24 * 250), EndTime: time.Now(), TimeFrame: M15, TypeChart: Normal})
@@ -777,17 +597,7 @@ func (a StockProvider) Run(readfromLast bool, isSeq bool, timer_minute *int64) e
 	if timer_minute == nil {
 		//::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 		var wg sync.WaitGroup
-		if a.Provider == Avard {
-			wg.Add(len(a._WatchListItem.Tehran))
-			for _, g := range a._WatchListItem.Tehran {
-				if a.IsSeqRunProcess {
-					a.avardAssetProcess(&wg, readfromLast, g)
-				} else {
-					go a.avardAssetProcess(&wg, readfromLast, g)
-				}
-
-			}
-		} else if a.Provider == Binance {
+		if a.Provider == Binance {
 			wg.Add(len(a._WatchListItem.Crypto))
 			for _, g := range a._WatchListItem.Crypto {
 				if a.IsSeqRunProcess {
@@ -816,17 +626,7 @@ func (a StockProvider) Run(readfromLast bool, isSeq bool, timer_minute *int64) e
 				isWorking = true
 				//::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 				var wg sync.WaitGroup
-				if a.Provider == Avard {
-					wg.Add(len(a._WatchListItem.Tehran))
-					for _, g := range a._WatchListItem.Tehran {
-						if a.IsSeqRunProcess {
-							a.avardAssetProcess(&wg, readfromLast, g)
-						} else {
-							go a.avardAssetProcess(&wg, readfromLast, g)
-						}
-
-					}
-				} else if a.Provider == Binance {
+				if a.Provider == Binance {
 					wg.Add(len(a._WatchListItem.Crypto))
 					for _, g := range a._WatchListItem.Crypto {
 						if a.IsSeqRunProcess {

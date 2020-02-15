@@ -15,6 +15,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"regexp"
 	"time"
 )
 
@@ -29,7 +30,7 @@ type ActivatedInfo struct {
 	End           time.Time `json:"end"`   //time.Now().Add(time.Hour * 24 * 365), // 1 year
 	Start         time.Time `json:"start"` //time.Now().Add(time.Hour * 24 * 365), // 1 year
 	BinPath       string    `json:"binpath"`
-	NumberOfItems int       `json:"numberofitems"`
+	NumberOfItems int32       `json:"numberofitems"`
 	CryptoEnable  bool      `json:"cryptoenable"`
 	TehranEnable  bool      `json:"tehranenable"`
 	ForexEnable   bool      `json:"forexenable"`
@@ -43,7 +44,7 @@ func (a ActivatedInfo) RemainingTime() int64 {
 type LicenseGen struct {
 }
 
-const phrase = "abc===="
+const phrase = "123==="
 
 var dir_path string = path.Join(GetRootCache(), "license")
 
@@ -90,15 +91,19 @@ func (a LicenseGen) MakeLicense(email string) error {
 	if err != nil {
 		panic(err)
 	}
-
+	re_email :=regexp.MustCompile(`^[a-z0-9._%+\-]+@[a-z0-9.\-]+\.[a-z]{2,4}$`)
+	if !re_email.MatchString(email) {
+		return errors.New("Make License : Email Not Valid");
+	}
 	ma_id, err := machineid.ID()
+
 	if err != nil {
 		return err
 	}
 
 	doc := LicenseInfo{
 		Email:   email,
-		CpuId:  ma_id,
+		CpuId:   ma_id,
 		BinPath: pwd,
 	}
 	docBytes, err := json.Marshal(doc)
@@ -128,13 +133,13 @@ func (a LicenseGen) MakeLicense(email string) error {
 	fmt.Println("license has been created succefully", s)
 	return nil
 }
-func (a LicenseGen) MakeActivate(license_path string,days int, items_num int, is_cryto bool, is_tehran bool, is_forex bool) error {
-	var li_path string =license_path;
+func (a LicenseGen) MakeActivate(license_path string, days int32, items_num int32, is_cryto bool, is_tehran bool, is_forex bool) error {
+	var li_path string = license_path
 	if !IsExist(li_path) {
 		return errors.New(fmt.Sprintf("MakeActivate -> could not find file  %s", li_path))
 	}
 
-	 basedir :=filepath.Dir(license_path);
+	basedir := filepath.Dir(license_path)
 	//:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::: READ LICENSE
 
 	content, err := ioutil.ReadFile(li_path)
@@ -175,7 +180,7 @@ func (a LicenseGen) MakeActivate(license_path string,days int, items_num int, is
 	if _, err := os.Stat(basedir); os.IsNotExist(err) {
 		os.MkdirAll(basedir, os.ModePerm)
 	}
-	var a_path string = path.Join(basedir, fmt.Sprintf("%v_%v",license.Email,"activated.ini"))
+	var a_path string = path.Join(basedir, fmt.Sprintf("%v_%v", license.Email, "activated.ini"))
 	file, err1 := os.Create(a_path)
 
 	defer file.Close()
@@ -241,7 +246,7 @@ func (a LicenseGen) Validation() error {
 		return errors.New(fmt.Sprintf("Validation() -> Bin Path Conflict \n a:[%v] \n l:[%v]\n", activated.Email, license.Email))
 	}
 
-	if activated.RemainingTime()<=0{
+	if activated.RemainingTime() <= 0 {
 		return errors.New(fmt.Sprintf("Validation() -> license Expire"))
 	}
 	return nil
@@ -270,20 +275,14 @@ func (a LicenseGen) Print() error {
 	fmt.Println("Email :", ai.Email, "\nStart :", TimeToString(ai.Start, ""), "\nEnd   :", TimeToString(ai.End, ""), "\nRemaining Time :", ai.RemainingTime(), " Days", "\nBin Path :", ai.BinPath, "\nItems Num :", ai.NumberOfItems, "\nTehran :", ai.TehranEnable, "\nCrypto :", ai.CryptoEnable, "\nForex :", ai.ForexEnable)
 	return nil
 }
-func getMacAddr() () {
 
-
-}
 func (a LicenseGen) Test() {
 	//a.MakeLicense("qasemt@gmail.com")
-		a.MakeActivate("D:\\workspace\\goprojects\\golanglearning\\src\\d\\license\\license.ini",360, 10, true, true, false)
+	a.MakeActivate("D:\\workspace\\goprojects\\golanglearning\\src\\d\\license\\license.ini", 360, 10, true, true, false)
 
 	e := a.Validation()
 	if e != nil {
 		fmt.Println("license not valid")
 	}
 	a.Print()
-
-	 getMacAddr()
-
 }
