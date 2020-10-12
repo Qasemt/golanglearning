@@ -20,3 +20,11 @@ src/__debug_bin
 /src/d/cache
 /src/d/crypto/BTCUSDT
 /src/d/watchList.json
+/src/cache
+/src/watchList.json
+/src/d/crypto
+src/d/stock_list.csv
+src/d/temp_watch_list.csv
+src/d/license/activated.ini
+src/d/license/license.ini
+src/d/license/qasemt@gmail.com_activated.ini
